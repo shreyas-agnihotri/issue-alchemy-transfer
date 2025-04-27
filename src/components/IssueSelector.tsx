@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { JiraIssue } from '@/types/jira';
 import { Badge } from '@/components/ui/badge';
-import { getProjectById } from '@/lib/mock-data';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface IssueSelectorProps {
@@ -20,6 +19,14 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
   onIssueSelect,
   isLoading = false,
 }) => {
+  const allSelected = issues.length > 0 && issues.length === selectedIssues.length;
+  
+  const handleSelectAll = (checked: boolean) => {
+    issues.forEach(issue => {
+      onIssueSelect(issue.id, checked);
+    });
+  };
+
   const getTypeBadgeColor = (type: string) => {
     switch (type) {
       case 'Bug': return 'bg-jira-red text-white';
@@ -73,7 +80,24 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Select Issues to Clone</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Select Issues to Clone</CardTitle>
+          {issues.length > 0 && (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={handleSelectAll}
+                id="select-all"
+              />
+              <label
+                htmlFor="select-all"
+                className="text-sm text-muted-foreground cursor-pointer"
+              >
+                Select All
+              </label>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
