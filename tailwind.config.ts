@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Atlassian-inspired colors
+				jira: {
+					blue: '#0052CC',
+					'blue-light': '#4C9AFF',
+					'blue-dark': '#0747A6',
+					green: '#36B37E',
+					red: '#FF5630',
+					yellow: '#FFAB00',
+					purple: '#6554C0',
+					teal: '#00B8D9',
+					neutral: {
+						dark: '#172B4D',
+						medium: '#505F79',
+						light: '#F4F5F7',
+					}
 				}
 			},
 			borderRadius: {
