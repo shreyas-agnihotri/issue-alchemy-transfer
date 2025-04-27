@@ -1,8 +1,9 @@
 
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { JiraIssue, CloneResult } from '@/types/jira';
 import { getProjectById } from '@/lib/mock-data';
+import { useCloneDatabase } from './useCloneDatabase';
+import { useIssueCloning } from './useIssueCloning';
 
 interface UseCloneOperationsProps {
   selectedIssues: JiraIssue[];
@@ -20,6 +21,9 @@ export const useCloneOperations = ({
   setCloneResults,
 }: UseCloneOperationsProps) => {
   const { toast } = useToast();
+  const { createCloneHistory, updateCloneHistory, logIssueResult, cloneIssueLinks } = useCloneDatabase();
+  const { cloneSingleIssue } = useIssueCloning({ targetProjectId, setCloneResults });
+
   const targetProject = targetProjectId ? getProjectById(targetProjectId) : undefined;
   const sourceProject = selectedIssues.length > 0 
     ? getProjectById(selectedIssues[0].project)
@@ -59,126 +63,55 @@ export const useCloneOperations = ({
     setCloneResults(initialResults);
 
     try {
-      const { data: cloneHistory, error: historyError } = await supabase
-        .from('clone_history')
-        .insert({
-          source_project_id: sourceProject?.id,
-          target_project_id: targetProject?.id,
-          total_issues: selectedIssues.length,
-          successful_issues: 0,
-          failed_issues: 0,
-        })
-        .select()
-        .single();
+      const cloneHistory = await createCloneHistory({
+        source_project_id: sourceProject?.id || '',
+        target_project_id: targetProject?.id || '',
+        total_issues: selectedIssues.length,
+        successful_issues: 0,
+        failed_issues: 0,
+      });
 
-      if (historyError) throw historyError;
-      
       const idMapping: Record<string, string> = {};
       let successCount = 0;
       let failureCount = 0;
       
       for (let index = 0; index < selectedIssues.length; index++) {
         const issue = selectedIssues[index];
-        const delay = 1000 + Math.random() * 2000;
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
         
         try {
-          const success = Math.random() > 0.1;
-          
-          if (success) {
-            const targetIssue: JiraIssue = {
-              ...issue,
-              id: `new-${issue.id}`,
-              key: `${targetProject?.key}-${100 + index}`,
-              project: targetProjectId,
-              created: new Date().toISOString(),
-              updated: new Date().toISOString(),
-            };
-            
-            idMapping[issue.id] = targetIssue.id;
-            successCount++;
-            
-            await supabase
-              .from('clone_issue_results')
-              .insert({
-                clone_history_id: cloneHistory.id,
-                source_issue_id: issue.id,
-                source_issue_key: issue.key,
-                target_issue_id: targetIssue.id,
-                target_issue_key: targetIssue.key,
-                status: 'success'
-              });
-            
-            setCloneResults((prev: CloneResult[]) => {
-              const updated = [...prev];
-              updated[index] = {
-                sourceIssue: issue,
-                targetIssue,
-                status: 'success'
-              };
-              return updated;
-            });
-          } else {
-            throw new Error('API Error: Unable to create issue');
+          const result = await cloneSingleIssue(issue, index);
+          if (result.targetIssue) {
+            idMapping[issue.id] = result.targetIssue.id;
           }
-        } catch (error) {
+          await logIssueResult(cloneHistory.id, issue, result);
+          successCount++;
+        } catch (error: any) {
           failureCount++;
           
-          await supabase
-            .from('clone_issue_results')
-            .insert({
-              clone_history_id: cloneHistory.id,
-              source_issue_id: issue.id,
-              source_issue_key: issue.key,
-              status: 'failed',
-              error_message: error.message
-            });
+          const failedResult: CloneResult = {
+            sourceIssue: issue,
+            status: 'failed',
+            error: error.message
+          };
+          
+          await logIssueResult(cloneHistory.id, issue, failedResult);
           
           setCloneResults((prev: CloneResult[]) => {
             const updated = [...prev];
-            updated[index] = {
-              sourceIssue: issue,
-              status: 'failed',
-              error: error.message
-            };
+            updated[index] = failedResult;
             return updated;
           });
         }
       }
       
-      await supabase
-        .from('clone_history')
-        .update({
-          successful_issues: successCount,
-          failed_issues: failureCount
-        })
-        .eq('id', cloneHistory.id);
+      await updateCloneHistory(cloneHistory.id, {
+        successful_issues: successCount,
+        failed_issues: failureCount
+      });
 
-      try {
-        const { data: existingLinks } = await supabase
-          .from('issue_links')
-          .select('*')
-          .in('source_issue_id', selectedIssues.map(issue => issue.id));
+      await cloneIssueLinks(idMapping);
 
-        if (existingLinks) {
-          for (const link of existingLinks) {
-            if (idMapping[link.source_issue_id] && idMapping[link.target_issue_id]) {
-              await supabase
-                .from('issue_links')
-                .insert({
-                  source_issue_id: idMapping[link.source_issue_id],
-                  target_issue_id: idMapping[link.target_issue_id],
-                  metadata: link.metadata
-                });
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error cloning issue links:', error);
-      }
-
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating clone history:', error);
       toast({
         title: "Error storing clone history",

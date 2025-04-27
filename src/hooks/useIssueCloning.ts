@@ -1,0 +1,50 @@
+
+import { JiraIssue, CloneResult } from '@/types/jira';
+
+interface UseIssueCloningProps {
+  targetProjectId: string;
+  setCloneResults: (results: CloneResult[] | ((prev: CloneResult[]) => CloneResult[])) => void;
+}
+
+export const useIssueCloning = ({
+  targetProjectId,
+  setCloneResults
+}: UseIssueCloningProps) => {
+  const cloneSingleIssue = async (issue: JiraIssue, index: number): Promise<CloneResult> => {
+    const delay = 1000 + Math.random() * 2000;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    const success = Math.random() > 0.1;
+    
+    if (success) {
+      const targetIssue: JiraIssue = {
+        ...issue,
+        id: `new-${issue.id}`,
+        key: `${targetProjectId.toUpperCase()}-${100 + index}`,
+        project: targetProjectId,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+      };
+      
+      setCloneResults((prev: CloneResult[]) => {
+        const updated = [...prev];
+        updated[index] = {
+          sourceIssue: issue,
+          targetIssue,
+          status: 'success'
+        };
+        return updated;
+      });
+      
+      return {
+        sourceIssue: issue,
+        targetIssue,
+        status: 'success'
+      };
+    }
+    
+    throw new Error('API Error: Unable to create issue');
+  };
+
+  return { cloneSingleIssue };
+};
