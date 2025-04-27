@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { mockProjects, getIssuesByProjectId, getProjectById } from '@/lib/mock-data';
 import { CloneResult, JiraIssue, JiraProject } from '@/types/jira';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useCloneIssues = () => {
   const { toast } = useToast();
@@ -19,7 +19,6 @@ export const useCloneIssues = () => {
   const targetProject = targetProjectId ? getProjectById(targetProjectId) : undefined;
   const selectedIssues = issues.filter(issue => selectedIssueIds.includes(issue.id));
   
-  // Get the source project based on the first selected issue
   const sourceProject = selectedIssues.length > 0 
     ? getProjectById(selectedIssues[0].project)
     : undefined;
@@ -37,10 +36,7 @@ export const useCloneIssues = () => {
     setIsLoading(true);
     setSelectedIssueIds([]);
     
-    // Simulate API call with timeout - in real app this would use the JQL filter
     setTimeout(() => {
-      // For demo purposes, we'll just load all issues since this is mock data
-      // In a real app, this would use the JQL filter to fetch matching issues
       const allIssues = mockProjects.flatMap(project => 
         getIssuesByProjectId(project.id)
       );
@@ -79,11 +75,10 @@ export const useCloneIssues = () => {
     setShowConfirmation(true);
   };
 
-  const handleConfirmClone = () => {
+  const handleConfirmClone = async () => {
     setShowConfirmation(false);
     setIsCloning(true);
     
-    // Initialize results
     const initialResults: CloneResult[] = selectedIssues.map(issue => ({
       sourceIssue: issue,
       status: 'pending'
@@ -91,54 +86,81 @@ export const useCloneIssues = () => {
     
     setCloneResults(initialResults);
     
-    // Simulate API calls with timeouts
-    selectedIssues.forEach((issue, index) => {
+    const idMapping: Record<string, string> = {};
+    
+    for (let index = 0; index < selectedIssues.length; index++) {
+      const issue = selectedIssues[index];
       const delay = 1000 + Math.random() * 2000; // Random delay between 1-3 seconds
       
-      setTimeout(() => {
-        setCloneResults(prev => {
-          const updated = [...prev];
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      try {
+        const success = Math.random() > 0.1;
+        
+        if (success) {
+          const targetIssue: JiraIssue = {
+            ...issue,
+            id: `new-${issue.id}`,
+            key: `${targetProject?.key}-${100 + index}`,
+            project: targetProjectId,
+            created: new Date().toISOString(),
+            updated: new Date().toISOString(),
+          };
           
-          // 10% chance of failure for demo purposes
-          const success = Math.random() > 0.1;
+          idMapping[issue.id] = targetIssue.id;
           
-          if (success) {
-            const targetIssue: JiraIssue = {
-              ...issue,
-              id: `new-${issue.id}`,
-              key: `${targetProject?.key}-${100 + index}`,
-              project: targetProjectId,
-              created: new Date().toISOString(),
-              updated: new Date().toISOString(),
-            };
-            
+          setCloneResults(prev => {
+            const updated = [...prev];
             updated[index] = {
               sourceIssue: issue,
               targetIssue,
               status: 'success'
             };
-          } else {
-            updated[index] = {
-              sourceIssue: issue,
-              status: 'failed',
-              error: 'API Error: Unable to create issue'
-            };
-          }
-          
+            return updated;
+          });
+        } else {
+          throw new Error('API Error: Unable to create issue');
+        }
+      } catch (error) {
+        setCloneResults(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            sourceIssue: issue,
+            status: 'failed',
+            error: error.message
+          };
           return updated;
         });
-        
-        // Check if all done
-        if (index === selectedIssues.length - 1) {
-          setTimeout(() => {
-            setIsCloning(false);
-            toast({
-              title: "Clone operation completed",
-              description: `${selectedIssues.length} issues processed`,
-            });
-          }, 500);
+      }
+    }
+    
+    try {
+      const { data: existingLinks } = await supabase
+        .from('issue_links')
+        .select('*')
+        .in('source_issue_id', selectedIssues.map(issue => issue.id));
+
+      if (existingLinks) {
+        for (const link of existingLinks) {
+          if (idMapping[link.source_issue_id] && idMapping[link.target_issue_id]) {
+            await supabase
+              .from('issue_links')
+              .insert({
+                source_issue_id: idMapping[link.source_issue_id],
+                target_issue_id: idMapping[link.target_issue_id],
+                metadata: link.metadata
+              });
+          }
         }
-      }, delay);
+      }
+    } catch (error) {
+      console.error('Error cloning issue links:', error);
+    }
+
+    setIsCloning(false);
+    toast({
+      title: "Clone operation completed",
+      description: `${selectedIssues.length} issues processed`,
     });
   };
 

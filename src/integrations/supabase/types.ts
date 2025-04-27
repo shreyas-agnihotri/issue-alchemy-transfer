@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      issue_links: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          source_issue_id: string
+          target_issue_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source_issue_id: string
+          target_issue_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source_issue_id?: string
+          target_issue_id?: string
+        }
+        Relationships: []
+      }
       jira_configs: {
         Row: {
           api_key: string
