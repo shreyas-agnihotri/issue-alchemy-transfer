@@ -3,8 +3,9 @@ import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +14,7 @@ interface JiraConfigFormData {
   jira_url: string;
   api_key: string;
   user_email: string;
+  jql_filter: string;
 }
 
 const JiraConfig = () => {
@@ -86,6 +88,24 @@ const JiraConfig = () => {
                   <FormControl>
                     <Input type="email" placeholder="your-email@example.com" {...field} />
                   </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="jql_filter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default JQL Filter</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC' 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter a JQL query to filter which issues appear in the clone interface.
+                  </FormDescription>
                 </FormItem>
               )}
             />
