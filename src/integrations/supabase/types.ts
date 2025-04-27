@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           id: string
           jira_url: string
+          jql_filter: string | null
           updated_at: string
           user_email: string
         }
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string
           id?: string
           jira_url: string
+          jql_filter?: string | null
           updated_at?: string
           user_email: string
         }
@@ -31,6 +33,7 @@ export type Database = {
           created_at?: string
           id?: string
           jira_url?: string
+          jql_filter?: string | null
           updated_at?: string
           user_email?: string
         }
