@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { mockProjects, getIssuesByProjectId, getProjectById } from '@/lib/mock-data';
@@ -83,8 +84,8 @@ export const useCloneIssues = () => {
     
     if (!targetProject) {
       toast({
-        title: "Target project not selected",
-        description: "Please select a target project",
+        title: "Target project required",
+        description: "Please select a target project for the cloned issues",
         variant: "destructive",
       });
       return;
