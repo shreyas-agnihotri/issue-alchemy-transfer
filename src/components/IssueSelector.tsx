@@ -69,7 +69,7 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
         <CardContent>
           <div className="flex flex-col items-center justify-center p-6">
             <p className="text-jira-neutral-medium">
-              No issues found in this project. Please select a different source project.
+              No issues found. Try adjusting your search criteria.
             </p>
           </div>
         </CardContent>
@@ -162,3 +162,4 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
 };
 
 export default IssueSelector;
+
