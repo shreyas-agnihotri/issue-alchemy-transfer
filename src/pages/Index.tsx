@@ -6,13 +6,15 @@ import IssueSelector from '@/components/IssueSelector';
 import CloneStatus from '@/components/CloneStatus';
 import CloneConfirmation from '@/components/CloneConfirmation';
 import ClonePageLayout from '@/components/ClonePageLayout';
+import JqlInput from '@/components/JqlInput';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
-import { mockProjects } from '@/lib/mock-data';
 
 const Index = () => {
   const {
     targetProjectId,
     setTargetProjectId,
+    jql,
+    setJql,
     issues,
     selectedIssueIds,
     isLoading,
@@ -24,11 +26,19 @@ const Index = () => {
     selectedIssues,
     handleIssueSelect,
     handleCloneClick,
-    handleConfirmClone
+    handleConfirmClone,
+    handleSearch
   } = useCloneIssues();
 
   return (
     <ClonePageLayout>
+      <JqlInput 
+        jql={jql}
+        onJqlChange={setJql}
+        onSearch={handleSearch}
+        isLoading={isLoading}
+      />
+      
       <ProjectSelector
         projects={mockProjects}
         selectedTargetProject={targetProjectId}

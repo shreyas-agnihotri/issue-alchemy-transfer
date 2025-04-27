@@ -1,17 +1,15 @@
-
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { mockProjects, getIssuesByProjectId, getProjectById } from '@/lib/mock-data';
 import { CloneResult, JiraIssue, JiraProject } from '@/types/jira';
-import { supabase } from '@/integrations/supabase/client';
 
 export const useCloneIssues = () => {
   const { toast } = useToast();
   
   const [targetProjectId, setTargetProjectId] = useState<string>('');
+  const [jql, setJql] = useState<string>('');
   const [issues, setIssues] = useState<JiraIssue[]>([]);
   const [selectedIssueIds, setSelectedIssueIds] = useState<string[]>([]);
-  const [jqlFilter, setJqlFilter] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCloning, setIsCloning] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -20,42 +18,30 @@ export const useCloneIssues = () => {
   const targetProject = targetProjectId ? getProjectById(targetProjectId) : undefined;
   const selectedIssues = issues.filter(issue => selectedIssueIds.includes(issue.id));
 
-  useEffect(() => {
-    const loadJqlFilter = async () => {
-      const { data, error } = await supabase
-        .from('jira_configs')
-        .select('jql_filter')
-        .maybeSingle();
-
-      if (!error && data?.jql_filter) {
-        setJqlFilter(data.jql_filter);
-      }
-    };
-
-    loadJqlFilter();
-  }, []);
-
-  useEffect(() => {
-    if (jqlFilter) {
-      setIsLoading(true);
-      setSelectedIssueIds([]);
-      
-      // Simulate API call with timeout - in real app this would use the JQL filter
-      const timeoutId = setTimeout(() => {
-        // For demo purposes, we'll just load all issues since this is mock data
-        // In a real app, this would use the JQL filter to fetch matching issues
-        const allIssues = mockProjects.flatMap(project => 
-          getIssuesByProjectId(project.id)
-        );
-        setIssues(allIssues);
-        setIsLoading(false);
-      }, 700);
-      
-      return () => clearTimeout(timeoutId);
-    } else {
-      setIssues([]);
+  const handleSearch = () => {
+    if (!jql.trim()) {
+      toast({
+        title: "JQL required",
+        description: "Please enter a JQL query to search for issues",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [jqlFilter]);
+
+    setIsLoading(true);
+    setSelectedIssueIds([]);
+    
+    // Simulate API call with timeout - in real app this would use the JQL filter
+    setTimeout(() => {
+      // For demo purposes, we'll just load all issues since this is mock data
+      // In a real app, this would use the JQL filter to fetch matching issues
+      const allIssues = mockProjects.flatMap(project => 
+        getIssuesByProjectId(project.id)
+      );
+      setIssues(allIssues);
+      setIsLoading(false);
+    }, 700);
+  };
 
   const handleIssueSelect = (issueId: string, selected: boolean) => {
     if (selected) {
@@ -153,9 +139,10 @@ export const useCloneIssues = () => {
   return {
     targetProjectId,
     setTargetProjectId,
+    jql,
+    setJql,
     issues,
     selectedIssueIds,
-    jqlFilter,
     isLoading,
     isCloning,
     showConfirmation,
@@ -165,6 +152,7 @@ export const useCloneIssues = () => {
     selectedIssues,
     handleIssueSelect,
     handleCloneClick,
-    handleConfirmClone
+    handleConfirmClone,
+    handleSearch
   };
 };
