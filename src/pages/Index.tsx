@@ -8,6 +8,7 @@ import CloneConfirmation from '@/components/CloneConfirmation';
 import ClonePageLayout from '@/components/ClonePageLayout';
 import JqlInput from '@/components/JqlInput';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
+import { mockProjects } from '@/lib/mock-data';
 
 const Index = () => {
   const {
