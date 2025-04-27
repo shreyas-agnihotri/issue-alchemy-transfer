@@ -9,7 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      jira_configs: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          jira_url: string
+          updated_at: string
+          user_email: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          id?: string
+          jira_url: string
+          updated_at?: string
+          user_email: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          jira_url?: string
+          updated_at?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

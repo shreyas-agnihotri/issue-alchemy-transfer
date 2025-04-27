@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ArrowRightLeft } from 'lucide-react';
+import JiraConfig from './JiraConfig';
 
 const Header = () => {
   return (
@@ -11,6 +12,7 @@ const Header = () => {
       </div>
       <div className="ml-auto flex items-center space-x-4">
         <span className="text-sm opacity-80">Transfer issues between JIRA and Product Discovery</span>
+        <JiraConfig />
       </div>
     </header>
   );
