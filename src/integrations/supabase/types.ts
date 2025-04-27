@@ -9,6 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      clone_history: {
+        Row: {
+          created_at: string
+          failed_issues: number
+          id: string
+          source_project_id: string
+          successful_issues: number
+          target_project_id: string
+          total_issues: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          failed_issues: number
+          id?: string
+          source_project_id: string
+          successful_issues: number
+          target_project_id: string
+          total_issues: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          failed_issues?: number
+          id?: string
+          source_project_id?: string
+          successful_issues?: number
+          target_project_id?: string
+          total_issues?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      clone_issue_results: {
+        Row: {
+          clone_history_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          source_issue_id: string
+          source_issue_key: string
+          status: string
+          target_issue_id: string | null
+          target_issue_key: string | null
+        }
+        Insert: {
+          clone_history_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          source_issue_id: string
+          source_issue_key: string
+          status: string
+          target_issue_id?: string | null
+          target_issue_key?: string | null
+        }
+        Update: {
+          clone_history_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          source_issue_id?: string
+          source_issue_key?: string
+          status?: string
+          target_issue_id?: string | null
+          target_issue_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clone_issue_results_clone_history_id_fkey"
+            columns: ["clone_history_id"]
+            isOneToOne: false
+            referencedRelation: "clone_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       issue_links: {
         Row: {
           created_at: string

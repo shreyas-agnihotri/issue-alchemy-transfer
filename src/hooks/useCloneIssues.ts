@@ -104,76 +104,139 @@ export const useCloneIssues = () => {
     }));
     
     setCloneResults(initialResults);
-    
-    const idMapping: Record<string, string> = {};
-    
-    for (let index = 0; index < selectedIssues.length; index++) {
-      const issue = selectedIssues[index];
-      const delay = 1000 + Math.random() * 2000; // Random delay between 1-3 seconds
+
+    try {
+      // Create clone history record
+      const { data: cloneHistory, error: historyError } = await supabase
+        .from('clone_history')
+        .insert({
+          source_project_id: sourceProject?.id,
+          target_project_id: targetProject?.id,
+          total_issues: selectedIssues.length,
+          successful_issues: 0,
+          failed_issues: 0,
+        })
+        .select()
+        .single();
+
+      if (historyError) throw historyError;
       
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const idMapping: Record<string, string> = {};
+      let successCount = 0;
+      let failureCount = 0;
       
-      try {
-        const success = Math.random() > 0.1;
+      for (let index = 0; index < selectedIssues.length; index++) {
+        const issue = selectedIssues[index];
+        const delay = 1000 + Math.random() * 2000; // Random delay between 1-3 seconds
         
-        if (success) {
-          const targetIssue: JiraIssue = {
-            ...issue,
-            id: `new-${issue.id}`,
-            key: `${targetProject?.key}-${100 + index}`,
-            project: targetProjectId,
-            created: new Date().toISOString(),
-            updated: new Date().toISOString(),
-          };
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        try {
+          const success = Math.random() > 0.1;
           
-          idMapping[issue.id] = targetIssue.id;
+          if (success) {
+            const targetIssue: JiraIssue = {
+              ...issue,
+              id: `new-${issue.id}`,
+              key: `${targetProject?.key}-${100 + index}`,
+              project: targetProjectId,
+              created: new Date().toISOString(),
+              updated: new Date().toISOString(),
+            };
+            
+            idMapping[issue.id] = targetIssue.id;
+            successCount++;
+            
+            // Store successful clone result
+            await supabase
+              .from('clone_issue_results')
+              .insert({
+                clone_history_id: cloneHistory.id,
+                source_issue_id: issue.id,
+                source_issue_key: issue.key,
+                target_issue_id: targetIssue.id,
+                target_issue_key: targetIssue.key,
+                status: 'success'
+              });
+            
+            setCloneResults(prev => {
+              const updated = [...prev];
+              updated[index] = {
+                sourceIssue: issue,
+                targetIssue,
+                status: 'success'
+              };
+              return updated;
+            });
+          } else {
+            throw new Error('API Error: Unable to create issue');
+          }
+        } catch (error) {
+          failureCount++;
+          
+          // Store failed clone result
+          await supabase
+            .from('clone_issue_results')
+            .insert({
+              clone_history_id: cloneHistory.id,
+              source_issue_id: issue.id,
+              source_issue_key: issue.key,
+              status: 'failed',
+              error_message: error.message
+            });
           
           setCloneResults(prev => {
             const updated = [...prev];
             updated[index] = {
               sourceIssue: issue,
-              targetIssue,
-              status: 'success'
+              status: 'failed',
+              error: error.message
             };
             return updated;
           });
-        } else {
-          throw new Error('API Error: Unable to create issue');
         }
-      } catch (error) {
-        setCloneResults(prev => {
-          const updated = [...prev];
-          updated[index] = {
-            sourceIssue: issue,
-            status: 'failed',
-            error: error.message
-          };
-          return updated;
-        });
       }
-    }
-    
-    try {
-      const { data: existingLinks } = await supabase
-        .from('issue_links')
-        .select('*')
-        .in('source_issue_id', selectedIssues.map(issue => issue.id));
+      
+      // Update clone history with final counts
+      await supabase
+        .from('clone_history')
+        .update({
+          successful_issues: successCount,
+          failed_issues: failureCount
+        })
+        .eq('id', cloneHistory.id);
 
-      if (existingLinks) {
-        for (const link of existingLinks) {
-          if (idMapping[link.source_issue_id] && idMapping[link.target_issue_id]) {
-            await supabase
-              .from('issue_links')
-              .insert({
-                source_issue_id: idMapping[link.source_issue_id],
-                target_issue_id: idMapping[link.target_issue_id],
-                metadata: link.metadata
-              });
+      // Clone issue links
+      try {
+        const { data: existingLinks } = await supabase
+          .from('issue_links')
+          .select('*')
+          .in('source_issue_id', selectedIssues.map(issue => issue.id));
+
+        if (existingLinks) {
+          for (const link of existingLinks) {
+            if (idMapping[link.source_issue_id] && idMapping[link.target_issue_id]) {
+              await supabase
+                .from('issue_links')
+                .insert({
+                  source_issue_id: idMapping[link.source_issue_id],
+                  target_issue_id: idMapping[link.target_issue_id],
+                  metadata: link.metadata
+                });
+            }
           }
         }
+      } catch (error) {
+        console.error('Error cloning issue links:', error);
       }
+
     } catch (error) {
-      console.error('Error cloning issue links:', error);
+      console.error('Error creating clone history:', error);
+      toast({
+        title: "Error storing clone history",
+        description: error.message,
+        variant: "destructive",
+      });
     }
 
     setIsCloning(false);
