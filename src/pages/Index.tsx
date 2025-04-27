@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -9,15 +8,16 @@ import CloneStatus from '@/components/CloneStatus';
 import CloneConfirmation from '@/components/CloneConfirmation';
 import { mockProjects, getIssuesByProjectId, getProjectById } from '@/lib/mock-data';
 import { CloneResult, JiraIssue, JiraProject } from '@/types/jira';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index = () => {
   const { toast } = useToast();
   
-  // State for projects and issues
-  const [sourceProjectId, setSourceProjectId] = useState<string>('');
+  // Remove source project state and keep only target project
   const [targetProjectId, setTargetProjectId] = useState<string>('');
   const [issues, setIssues] = useState<JiraIssue[]>([]);
   const [selectedIssueIds, setSelectedIssueIds] = useState<string[]>([]);
+  const [jqlFilter, setJqlFilter] = useState<string>('');
   
   // Loading states
   const [isLoading, setIsLoading] = useState(false);
@@ -29,23 +29,42 @@ const Index = () => {
   // Clone results
   const [cloneResults, setCloneResults] = useState<CloneResult[]>([]);
   
-  // Selected projects
-  const sourceProject = sourceProjectId ? getProjectById(sourceProjectId) : undefined;
+  // Selected project
   const targetProject = targetProjectId ? getProjectById(targetProjectId) : undefined;
   
   // Selected issues
   const selectedIssues = issues.filter(issue => selectedIssueIds.includes(issue.id));
-  
-  // Load issues when source project changes
+
+  // Load JQL filter from Supabase when component mounts
   useEffect(() => {
-    if (sourceProjectId) {
+    const loadJqlFilter = async () => {
+      const { data, error } = await supabase
+        .from('jira_configs')
+        .select('jql_filter')
+        .maybeSingle();
+
+      if (!error && data?.jql_filter) {
+        setJqlFilter(data.jql_filter);
+      }
+    };
+
+    loadJqlFilter();
+  }, []);
+  
+  // Load issues when JQL filter changes
+  useEffect(() => {
+    if (jqlFilter) {
       setIsLoading(true);
       setSelectedIssueIds([]);
       
-      // Simulate API call with timeout
+      // Simulate API call with timeout - in real app this would use the JQL filter
       const timeoutId = setTimeout(() => {
-        const projectIssues = getIssuesByProjectId(sourceProjectId);
-        setIssues(projectIssues);
+        // For demo purposes, we'll just load all issues since this is mock data
+        // In a real app, this would use the JQL filter to fetch matching issues
+        const allIssues = mockProjects.flatMap(project => 
+          getIssuesByProjectId(project.id)
+        );
+        setIssues(allIssues);
         setIsLoading(false);
       }, 700);
       
@@ -53,7 +72,7 @@ const Index = () => {
     } else {
       setIssues([]);
     }
-  }, [sourceProjectId]);
+  }, [jqlFilter]);
   
   // Handle issue selection
   const handleIssueSelect = (issueId: string, selected: boolean) => {
@@ -75,10 +94,10 @@ const Index = () => {
       return;
     }
     
-    if (!sourceProject || !targetProject) {
+    if (!targetProject) {
       toast({
-        title: "Projects not selected",
-        description: "Please select both source and target projects",
+        title: "Target project not selected",
+        description: "Please select a target project",
         variant: "destructive",
       });
       return;
@@ -159,14 +178,12 @@ const Index = () => {
         <div className="space-y-8">
           <ProjectSelector
             projects={mockProjects}
-            selectedSourceProject={sourceProjectId}
             selectedTargetProject={targetProjectId}
-            onSourceProjectChange={setSourceProjectId}
             onTargetProjectChange={setTargetProjectId}
             isLoading={isLoading}
           />
           
-          {sourceProjectId && (
+          {jqlFilter && (
             <IssueSelector
               issues={issues}
               selectedIssues={selectedIssueIds}
@@ -195,7 +212,6 @@ const Index = () => {
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmClone}
         selectedIssues={selectedIssues}
-        sourceProject={sourceProject}
         targetProject={targetProject}
       />
     </div>
