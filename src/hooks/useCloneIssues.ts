@@ -26,8 +26,8 @@ export const useCloneIssues = () => {
   const handleSearch = () => {
     if (!jql.trim()) {
       toast({
-        title: "JQL required",
-        description: "Please enter a JQL query to search for issues",
+        title: "Search criteria required",
+        description: "Please enter a JQL query or paste an issue URL",
         variant: "destructive",
       });
       return;
@@ -37,10 +37,28 @@ export const useCloneIssues = () => {
     setSelectedIssueIds([]);
     
     setTimeout(() => {
-      const allIssues = mockProjects.flatMap(project => 
-        getIssuesByProjectId(project.id)
-      );
-      setIssues(allIssues);
+      let searchResults: JiraIssue[] = [];
+      
+      // If searching by issue key (from URL)
+      if (jql.startsWith('key =')) {
+        const key = jql.split('=')[1].trim();
+        searchResults = mockProjects.flatMap(project => 
+          getIssuesByProjectId(project.id)
+        ).filter(issue => issue.key === key);
+      } else {
+        // Regular JQL search - for demo, return all issues
+        searchResults = mockProjects.flatMap(project => 
+          getIssuesByProjectId(project.id)
+        );
+      }
+      
+      setIssues(searchResults);
+      
+      // Auto-select the issue if it's a single issue search
+      if (searchResults.length === 1 && jql.startsWith('key =')) {
+        setSelectedIssueIds([searchResults[0].id]);
+      }
+      
       setIsLoading(false);
     }, 700);
   };
