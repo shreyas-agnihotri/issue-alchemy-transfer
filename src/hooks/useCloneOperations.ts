@@ -9,7 +9,7 @@ interface UseCloneOperationsProps {
   targetProjectId: string;
   setShowConfirmation: (show: boolean) => void;
   setIsCloning: (cloning: boolean) => void;
-  setCloneResults: (results: CloneResult[]) => void;
+  setCloneResults: (results: CloneResult[] | ((prev: CloneResult[]) => CloneResult[])) => void;
 }
 
 export const useCloneOperations = ({
@@ -110,7 +110,7 @@ export const useCloneOperations = ({
                 status: 'success'
               });
             
-            setCloneResults(prev => {
+            setCloneResults((prev: CloneResult[]) => {
               const updated = [...prev];
               updated[index] = {
                 sourceIssue: issue,
@@ -135,7 +135,7 @@ export const useCloneOperations = ({
               error_message: error.message
             });
           
-          setCloneResults(prev => {
+          setCloneResults((prev: CloneResult[]) => {
             const updated = [...prev];
             updated[index] = {
               sourceIssue: issue,
