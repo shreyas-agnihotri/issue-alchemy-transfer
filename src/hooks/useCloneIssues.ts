@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { mockProjects, getIssuesByProjectId, getProjectById } from '@/lib/mock-data';
@@ -17,6 +18,11 @@ export const useCloneIssues = () => {
 
   const targetProject = targetProjectId ? getProjectById(targetProjectId) : undefined;
   const selectedIssues = issues.filter(issue => selectedIssueIds.includes(issue.id));
+  
+  // Get the source project based on the first selected issue
+  const sourceProject = selectedIssues.length > 0 
+    ? getProjectById(selectedIssues[0].project)
+    : undefined;
 
   const handleSearch = () => {
     if (!jql.trim()) {
@@ -150,6 +156,7 @@ export const useCloneIssues = () => {
     cloneResults,
     targetProject,
     selectedIssues,
+    sourceProject,
     handleIssueSelect,
     handleCloneClick,
     handleConfirmClone,

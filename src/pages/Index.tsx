@@ -25,6 +25,7 @@ const Index = () => {
     cloneResults,
     targetProject,
     selectedIssues,
+    sourceProject,
     handleIssueSelect,
     handleCloneClick,
     handleConfirmClone,
@@ -72,6 +73,7 @@ const Index = () => {
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleConfirmClone}
         selectedIssues={selectedIssues}
+        sourceProject={sourceProject}
         targetProject={targetProject}
       />
     </ClonePageLayout>
