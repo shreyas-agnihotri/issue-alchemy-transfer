@@ -86,7 +86,7 @@ class JiraClient {
 
   async cloneIssue(issueKey: string, targetProjectKey: string): Promise<any> {
     // First get the issue details
-    const issue = await this.request(`issue/${issueKey}`);
+    const issue = await this.request<{fields: any}>(`issue/${issueKey}`);
     
     // Prepare the new issue data
     const newIssue = {
