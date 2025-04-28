@@ -13,8 +13,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Expose protected methods for OAuth handling
-contextBridge.exposeInMainWorld('electronAPI', {
+// Expose protected methods for API requests and OAuth handling
+contextBridge.exposeInMainWorld('electron', {
+  makeRequest: (params) => ipcRenderer.invoke('make-request', params),
   exchangeOAuthCode: (data) => ipcRenderer.invoke('exchange-oauth-code', data),
   refreshOAuthToken: (data) => ipcRenderer.invoke('refresh-oauth-token', data)
 });
@@ -26,4 +27,3 @@ ipcRenderer.on('oauth-callback', (event, data) => {
     new CustomEvent('oauth-callback', { detail: data })
   );
 });
-

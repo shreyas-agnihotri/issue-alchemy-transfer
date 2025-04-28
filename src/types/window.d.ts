@@ -9,10 +9,11 @@ interface ElectronAPI {
     statusText: string;
     data: any;
   }>;
+  exchangeOAuthCode: (data: any) => Promise<any>;
+  refreshOAuthToken: (data: any) => Promise<any>;
 }
 
 interface Window {
   _consoleLog?: string[];
   electron?: ElectronAPI;
 }
-

@@ -1,7 +1,7 @@
-
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const url = require('url');
+const fetch = require('node-fetch');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
@@ -12,8 +12,8 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, '../public/favicon.ico')
@@ -83,6 +83,39 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (mainWindow === null) {
     createWindow();
+  }
+});
+
+// IPC handler for making HTTP requests
+ipcMain.handle('make-request', async (event, { url, options }) => {
+  console.log('Making request to:', url);
+  try {
+    // Use node-fetch to make the request
+    const response = await fetch(url, options);
+    
+    // Get the status and headers
+    const status = response.status;
+    const statusText = response.statusText;
+    const ok = response.ok;
+    
+    // Parse the response based on content type
+    let data;
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
+    
+    return { ok, status, statusText, data };
+  } catch (error) {
+    console.error('Error making request:', error);
+    return { 
+      ok: false, 
+      status: 0, 
+      statusText: error.message, 
+      data: { error: error.message } 
+    };
   }
 });
 
