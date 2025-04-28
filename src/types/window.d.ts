@@ -11,6 +11,11 @@ interface ElectronAPI {
   }>;
   exchangeOAuthCode: (data: any) => Promise<any>;
   refreshOAuthToken: (data: any) => Promise<any>;
+  database: {
+    getCloneHistory: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
+    getCloneIssueResults: (cloneHistoryId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>;
+    getJiraConfigs: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
+  };
 }
 
 interface Window {

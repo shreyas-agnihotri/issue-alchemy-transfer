@@ -1,11 +1,12 @@
-
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const url = require('url');
 const fetch = require('node-fetch');
+const Database = require('better-sqlite3');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
+let db;
 
 function createWindow() {
   // Create the browser window
@@ -46,6 +47,87 @@ function createWindow() {
   
   // Handle protocol for OAuth callback
   setupOAuthCallback();
+  
+  // Initialize SQLite database
+  initDatabase();
+}
+
+// Initialize the SQLite database
+function initDatabase() {
+  try {
+    const userDataPath = app.getPath('userData');
+    const dbPath = path.join(userDataPath, 'jira-clone.db');
+    console.log('Database path:', dbPath);
+    
+    db = new Database(dbPath);
+    
+    // Initialize schema
+    initializeSchema();
+    
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+  }
+}
+
+// Initialize database schema
+function initializeSchema() {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clone_history (
+      id TEXT PRIMARY KEY,
+      source_project_id TEXT NOT NULL,
+      target_project_id TEXT NOT NULL,
+      total_issues INTEGER NOT NULL,
+      successful_issues INTEGER NOT NULL,
+      failed_issues INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      query TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS clone_issue_results (
+      id TEXT PRIMARY KEY,
+      clone_history_id TEXT NOT NULL,
+      source_issue_id TEXT NOT NULL,
+      source_issue_key TEXT NOT NULL,
+      target_issue_id TEXT,
+      target_issue_key TEXT,
+      status TEXT NOT NULL,
+      error_message TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (clone_history_id) REFERENCES clone_history(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS issue_links (
+      id TEXT PRIMARY KEY,
+      source_issue_id TEXT NOT NULL,
+      target_issue_id TEXT NOT NULL,
+      metadata TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS jira_configs (
+      id TEXT PRIMARY KEY,
+      jira_url TEXT NOT NULL,
+      api_key TEXT,
+      oauth_client_id TEXT,
+      oauth_client_secret TEXT,
+      auth_method TEXT NOT NULL DEFAULT 'api-key',
+      user_email TEXT,
+      jql_filter TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS oauth_tokens (
+      id TEXT PRIMARY KEY,
+      access_token TEXT NOT NULL,
+      refresh_token TEXT,
+      token_type TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      scope TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
 }
 
 // Set up protocol handler for OAuth callback
@@ -164,5 +246,38 @@ ipcMain.handle('refresh-oauth-token', async (event, { refreshToken, clientId, cl
   } catch (error) {
     console.error('Error refreshing OAuth token:', error);
     throw error;
+  }
+});
+
+// Add IPC handlers for database operations
+// These are placeholders that will need to be expanded with actual implementations
+ipcMain.handle('db-get-clone-history', async () => {
+  try {
+    const rows = db.prepare('SELECT * FROM clone_history ORDER BY created_at DESC').all();
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error('Error fetching clone history:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db-get-clone-issue-results', async (event, { cloneHistoryId }) => {
+  try {
+    const rows = db.prepare('SELECT * FROM clone_issue_results WHERE clone_history_id = ? ORDER BY created_at DESC')
+      .all(cloneHistoryId);
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error('Error fetching clone issue results:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('db-get-jira-configs', async () => {
+  try {
+    const rows = db.prepare('SELECT * FROM jira_configs ORDER BY updated_at DESC').all();
+    return { success: true, data: rows };
+  } catch (error) {
+    console.error('Error fetching jira configs:', error);
+    return { success: false, error: error.message };
   }
 });

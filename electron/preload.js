@@ -17,7 +17,15 @@ window.addEventListener('DOMContentLoaded', () => {
 contextBridge.exposeInMainWorld('electron', {
   makeRequest: (params) => ipcRenderer.invoke('make-request', params),
   exchangeOAuthCode: (data) => ipcRenderer.invoke('exchange-oauth-code', data),
-  refreshOAuthToken: (data) => ipcRenderer.invoke('refresh-oauth-token', data)
+  refreshOAuthToken: (data) => ipcRenderer.invoke('refresh-oauth-token', data),
+  
+  // Database operations
+  database: {
+    getCloneHistory: () => ipcRenderer.invoke('db-get-clone-history'),
+    getCloneIssueResults: (cloneHistoryId) => 
+      ipcRenderer.invoke('db-get-clone-issue-results', { cloneHistoryId }),
+    getJiraConfigs: () => ipcRenderer.invoke('db-get-jira-configs')
+  }
 });
 
 // Listen for OAuth callbacks

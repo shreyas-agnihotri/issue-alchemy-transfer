@@ -9,28 +9,18 @@ import { createJiraConfigOperations } from './operations/jira-config';
 export const createElectronDb = (): DatabaseOperations => {
   try {
     if (typeof window !== 'undefined' && window.navigator.userAgent.includes('Electron')) {
-      const { app } = window.require('electron');
-      const Database = window.require('better-sqlite3');
-      const path = window.require('path');
+      // Instead of using window.require, we need to use a different approach
+      // since we're in a renderer process with contextIsolation enabled
       
-      // Initialize database
-      const userDataPath = app.getPath('userData');
-      const dbPath = path.join(userDataPath, 'jira-clone.db');
-      const db = new Database(dbPath);
+      // For this example with better-sqlite3, we'll need to create an IPC handler
+      // to interact with the database from the main process
       
-      // Initialize schema
-      initializeDatabase(db);
-
-      // Create operations
-      const cloneHistoryOps = createCloneHistoryOperations(db);
-      const issueResultsOps = createIssueResultsOperations(db);
-      const jiraConfigOps = createJiraConfigOperations(db);
-
-      return {
-        ...cloneHistoryOps,
-        ...issueResultsOps,
-        ...jiraConfigOps
-      };
+      console.log('Electron environment detected, but direct database access is not available.');
+      console.log('Using mock database until proper IPC handlers are implemented.');
+      
+      // Return mock database operations for now
+      // In a full implementation, we would create IPC channels for database operations
+      return mockDbOps;
     }
     throw new Error('Not in Electron environment');
   } catch (error) {
