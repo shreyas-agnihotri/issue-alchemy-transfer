@@ -5,6 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { validateJiraUrl, validateJql } from '@/utils/validation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface JqlInputProps {
   jql: string;
@@ -15,16 +17,49 @@ interface JqlInputProps {
 
 const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoading }) => {
   const [issueUrl, setIssueUrl] = useState('');
+  const [urlError, setUrlError] = useState<string | undefined>();
+  const [jqlError, setJqlError] = useState<string | undefined>();
 
   const handleUrlPaste = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setIssueUrl(url);
     
-    // Extract issue key from URL if it matches Jira URL pattern
-    const issueKeyMatch = url.match(/\/browse\/([A-Z]+-\d+)/);
-    if (issueKeyMatch) {
-      const issueKey = issueKeyMatch[1];
-      onJqlChange(`key = ${issueKey}`);
+    const urlValidation = validateJiraUrl(url);
+    setUrlError(urlValidation.message);
+    
+    if (urlValidation.isValid && url) {
+      // Extract issue key from URL if it matches Jira URL pattern
+      const issueKeyMatch = url.match(/\/browse\/([A-Z]+-\d+)/);
+      if (issueKeyMatch) {
+        const issueKey = issueKeyMatch[1];
+        onJqlChange(`key = ${issueKey}`);
+        setJqlError(undefined);
+      }
+    }
+  };
+
+  const handleJqlChange = (value: string) => {
+    onJqlChange(value);
+    const jqlValidation = validateJql(value);
+    setJqlError(jqlValidation.message);
+  };
+
+  const handleSearch = () => {
+    const urlValidation = validateJiraUrl(issueUrl);
+    const jqlValidation = validateJql(jql);
+
+    if (!urlValidation.isValid) {
+      setUrlError(urlValidation.message);
+      return;
+    }
+
+    if (!jqlValidation.isValid) {
+      setJqlError(jqlValidation.message);
+      return;
+    }
+
+    if (jql.trim() || issueUrl.trim()) {
+      onSearch();
     }
   };
 
@@ -44,8 +79,13 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
               placeholder="Paste Jira issue URL here..."
               value={issueUrl}
               onChange={handleUrlPaste}
-              className="font-mono text-sm"
+              className={cn("font-mono text-sm", urlError && "border-red-500")}
             />
+            {urlError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertDescription>{urlError}</AlertDescription>
+              </Alert>
+            )}
           </div>
           <div>
             <label htmlFor="jql" className="block text-sm font-medium text-gray-700 mb-2">
@@ -55,15 +95,20 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
               id="jql"
               placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC'
               value={jql}
-              onChange={(e) => onJqlChange(e.target.value)}
-              className="font-mono text-sm"
+              onChange={(e) => handleJqlChange(e.target.value)}
+              className={cn("font-mono text-sm", jqlError && "border-red-500")}
               rows={3}
             />
+            {jqlError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertDescription>{jqlError}</AlertDescription>
+              </Alert>
+            )}
           </div>
           <div className="flex justify-end">
             <Button
-              onClick={onSearch}
-              disabled={isLoading || (!jql.trim() && !issueUrl.trim())}
+              onClick={handleSearch}
+              disabled={isLoading || (!jql.trim() && !issueUrl.trim()) || !!urlError || !!jqlError}
               className="bg-jira-blue hover:bg-jira-blue-dark"
             >
               <Search className="w-4 h-4 mr-2" />
