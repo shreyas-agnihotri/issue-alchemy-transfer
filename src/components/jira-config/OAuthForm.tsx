@@ -21,6 +21,7 @@ export function OAuthForm() {
   const { toast } = useToast();
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
   
   const form = useForm<JiraOAuthFormData>({
     defaultValues: {
@@ -31,7 +32,6 @@ export function OAuthForm() {
     }
   });
 
-  // Load saved configuration
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -58,7 +58,47 @@ export function OAuthForm() {
     loadConfig();
   }, [form]);
 
+  const validateCredentials = async (data: JiraOAuthFormData) => {
+    setIsValidating(true);
+    try {
+      const isValid = await jiraClient.testConnection({
+        baseUrl: data.jira_url,
+        auth: {
+          type: 'oauth',
+          token: 'mock_access_token'
+        }
+      });
+
+      if (isValid) {
+        toast({
+          title: "Credentials valid",
+          description: "Successfully connected to JIRA"
+        });
+        return true;
+      } else {
+        toast({
+          title: "Invalid credentials",
+          description: "Could not connect to JIRA with provided credentials",
+          variant: "destructive"
+        });
+        return false;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection failed",
+        description: error.message || "Could not validate JIRA credentials",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const onSubmit = async (data: JiraOAuthFormData) => {
+    const isValid = await validateCredentials(data);
+    if (!isValid) return;
+
     try {
       await db_ops.saveJiraConfig({
         ...data,
@@ -171,7 +211,7 @@ export function OAuthForm() {
               type="button" 
               className="w-full"
               variant={isAuthenticated ? "outline" : "default"}
-              disabled={isAuthenticating}
+              disabled={isAuthenticating || isValidating}
               onClick={initiateOAuthFlow}
             >
               {isAuthenticating ? (
@@ -189,10 +229,10 @@ export function OAuthForm() {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={!isAuthenticated}
+              disabled={!isAuthenticated || isValidating}
               variant={isAuthenticated ? "default" : "outline"}
             >
-              Save OAuth Configuration
+              {isValidating ? "Validating..." : "Save OAuth Configuration"}
             </Button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ export interface JiraApiKeyFormData {
 export function ApiKeyForm() {
   const { toast } = useToast();
   const form = useForm<JiraApiKeyFormData>();
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -40,14 +41,54 @@ export function ApiKeyForm() {
     loadConfig();
   }, [form]);
 
+  const validateCredentials = async (data: JiraApiKeyFormData) => {
+    setIsValidating(true);
+    try {
+      const isValid = await jiraClient.testConnection({
+        baseUrl: data.jira_url,
+        auth: {
+          type: 'api-key',
+          apiKey: data.api_key,
+          email: data.user_email
+        }
+      });
+
+      if (isValid) {
+        toast({
+          title: "Credentials valid",
+          description: "Successfully connected to JIRA"
+        });
+        return true;
+      } else {
+        toast({
+          title: "Invalid credentials",
+          description: "Could not connect to JIRA with provided credentials",
+          variant: "destructive"
+        });
+        return false;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Connection failed",
+        description: error.message || "Could not validate JIRA credentials",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   const onSubmit = async (data: JiraApiKeyFormData) => {
+    const isValid = await validateCredentials(data);
+    if (!isValid) return;
+
     try {
       await db_ops.saveJiraConfig({
         ...data,
         auth_method: 'api-key'
       });
 
-      // Configure the Jira client with the new credentials
       jiraClient.setConfig({
         baseUrl: data.jira_url,
         auth: {
@@ -117,7 +158,13 @@ export function ApiKeyForm() {
               Enter a JQL query to filter which issues appear in the clone interface.
             </p>
           </div>
-          <Button type="submit" className="w-full">Save API Key Configuration</Button>
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isValidating}
+          >
+            {isValidating ? "Validating..." : "Save API Key Configuration"}
+          </Button>
         </form>
       </CardContent>
     </Card>

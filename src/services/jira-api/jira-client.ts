@@ -1,4 +1,3 @@
-
 import { JiraConfig, JiraSearchResponse, JiraError } from './types';
 
 class JiraClient {
@@ -224,6 +223,35 @@ class JiraClient {
       method: 'POST',
       body: JSON.stringify(newIssueData)
     });
+  }
+
+  async validateCredentials(): Promise<boolean> {
+    try {
+      // Make a simple request to test the credentials
+      // We'll use the /myself endpoint which is lightweight and available in all Jira instances
+      const response = await this.request('myself');
+      return true;
+    } catch (error) {
+      console.error('Validation error:', error);
+      return false;
+    }
+  }
+
+  async testConnection(config: JiraConfig): Promise<boolean> {
+    // Temporarily set the config for testing
+    const previousConfig = this.config;
+    this.config = config;
+
+    try {
+      const isValid = await this.validateCredentials();
+      // Restore previous config
+      this.config = previousConfig;
+      return isValid;
+    } catch (error) {
+      // Restore previous config on error
+      this.config = previousConfig;
+      throw error;
+    }
   }
 }
 
