@@ -82,7 +82,9 @@ class ErrorBoundary extends Component<Props, State> {
                           {(() => {
                             try {
                               // Check if console.log history is available
-                              return window._consoleLog && Array.isArray(window._consoleLog) 
+                              return typeof window !== 'undefined' && 
+                                     window._consoleLog && 
+                                     Array.isArray(window._consoleLog) 
                                 ? window._consoleLog.slice(-50).join('\n')
                                 : 'Console logs not available';
                             } catch (e) {
