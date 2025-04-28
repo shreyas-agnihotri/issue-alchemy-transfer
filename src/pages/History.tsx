@@ -3,8 +3,10 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { History as HistoryIcon } from 'lucide-react';
+import { History as HistoryIcon, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -44,6 +46,14 @@ const History = () => {
 
   return (
     <div className="container mx-auto p-8">
+      <div className="mb-4">
+        <Button variant="ghost" asChild>
+          <Link to="/" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
@@ -89,3 +99,4 @@ const History = () => {
 };
 
 export default History;
+
