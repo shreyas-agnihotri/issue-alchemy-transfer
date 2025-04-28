@@ -79,7 +79,6 @@ class ErrorBoundary extends Component<Props, State> {
                       <div>
                         <strong>Console Logs:</strong>
                         <pre className="mt-2 p-2 bg-destructive/10 rounded overflow-auto max-h-[200px] whitespace-pre-wrap">
-                          {/* This will capture console logs if they are available */}
                           {(() => {
                             try {
                               // Check if console.log history is available
