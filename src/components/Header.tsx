@@ -10,8 +10,7 @@ const Header = () => {
         <ArrowRightLeft className="h-6 w-6" />
         <h1 className="text-xl font-medium">JIRA Deep Clone</h1>
       </div>
-      <div className="ml-auto flex items-center space-x-4">
-        <span className="text-sm opacity-80">Transfer issues between JIRA and Product Discovery</span>
+      <div className="ml-auto">
         <JiraConfig />
       </div>
     </header>
