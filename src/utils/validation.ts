@@ -21,12 +21,12 @@ export const validateJql = (jql: string) => {
 export const validateJiraUrl = (url: string) => {
   if (url === "") return { isValid: true, message: "" };
   
-  // Enhanced URL validation for Jira - accept both atlassian.net and other company domains
-  const isValid = /https?:\/\/.*?\.(?:atlassian\.net|[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)\/(?:browse|issues)\/[A-Z]+-\d+/.test(url);
+  // Generic URL validation for Jira instances - matches company hosted and cloud instances
+  const isValid = /^https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\/(?:browse|issues)\/[A-Z]+-\d+$/.test(url);
   
   return {
     isValid,
-    message: isValid ? "" : "Invalid Jira URL. Expected format: https://your-domain.atlassian.net/browse/PROJECT-123"
+    message: isValid ? "" : "Invalid Jira URL. Please enter a valid Jira issue URL"
   };
 };
 
