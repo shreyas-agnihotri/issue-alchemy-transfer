@@ -1,4 +1,3 @@
-
 // Mock database service for browser preview
 // Real implementation will be used in Electron runtime
 
@@ -49,6 +48,18 @@ const mockDbOps = {
     console.log('Mock getJiraConfig:', email);
     const config = localStorage.getItem('jiraConfig');
     return config ? JSON.parse(config) : null;
+  },
+  
+  saveOAuthToken: (token) => {
+    console.log('Mock saveOAuthToken:', token);
+    localStorage.setItem('jiraOAuthToken', JSON.stringify(token));
+    return Promise.resolve(token);
+  },
+  
+  getOAuthToken: () => {
+    console.log('Mock getOAuthToken');
+    const token = localStorage.getItem('jiraOAuthToken');
+    return token ? JSON.parse(token) : null;
   }
 };
 
@@ -110,11 +121,24 @@ export const db_ops = isBrowser
               CREATE TABLE IF NOT EXISTS jira_configs (
                 id TEXT PRIMARY KEY,
                 jira_url TEXT NOT NULL,
-                api_key TEXT NOT NULL,
-                user_email TEXT NOT NULL UNIQUE,
+                api_key TEXT,
+                oauth_client_id TEXT,
+                oauth_client_secret TEXT,
+                auth_method TEXT NOT NULL DEFAULT 'api-key',
+                user_email TEXT,
                 jql_filter TEXT,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+              );
+              
+              CREATE TABLE IF NOT EXISTS oauth_tokens (
+                id TEXT PRIMARY KEY,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT,
+                token_type TEXT NOT NULL,
+                expires_at INTEGER NOT NULL,
+                scope TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
               );
             `);
           };
@@ -182,21 +206,45 @@ export const db_ops = isBrowser
             saveJiraConfig: (config) => {
               const stmt = db.prepare(`
                 INSERT OR REPLACE INTO jira_configs 
-                (id, jira_url, api_key, user_email, jql_filter)
-                VALUES (?, ?, ?, ?, ?)
+                (id, jira_url, api_key, oauth_client_id, oauth_client_secret, auth_method, user_email, jql_filter)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
               `);
               
               return stmt.run(
                 crypto.randomUUID(),
                 config.jira_url,
-                config.api_key,
-                config.user_email,
+                config.api_key || null,
+                config.oauth_client_id || null,
+                config.oauth_client_secret || null,
+                config.auth_method || 'api-key',
+                config.user_email || null,
                 config.jql_filter
               );
             },
 
             getJiraConfig: (email) => {
-              return db.prepare('SELECT * FROM jira_configs WHERE user_email = ?').get(email);
+              return db.prepare('SELECT * FROM jira_configs ORDER BY created_at DESC LIMIT 1').get();
+            },
+            
+            saveOAuthToken: (token) => {
+              const stmt = db.prepare(`
+                INSERT OR REPLACE INTO oauth_tokens
+                (id, access_token, refresh_token, token_type, expires_at, scope)
+                VALUES (?, ?, ?, ?, ?, ?)
+              `);
+              
+              return stmt.run(
+                crypto.randomUUID(),
+                token.access_token,
+                token.refresh_token || null,
+                token.token_type,
+                token.expires_at,
+                token.scope || null
+              );
+            },
+            
+            getOAuthToken: () => {
+              return db.prepare('SELECT * FROM oauth_tokens ORDER BY created_at DESC LIMIT 1').get();
             }
           };
         }
