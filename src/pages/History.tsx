@@ -1,7 +1,5 @@
-
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { db_ops } from '@/services/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { History as HistoryIcon, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
@@ -29,18 +27,19 @@ interface HistoryRecord {
 }
 
 const History = () => {
-  const { data: history, isLoading } = useQuery({
-    queryKey: ['clone-history'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clone_history')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as HistoryRecord[];
+  const [history, setHistory] = React.useState<HistoryRecord[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    try {
+      const records = db_ops.getCloneHistory();
+      setHistory(records);
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    } finally {
+      setIsLoading(false);
     }
-  });
+  }, []);
 
   if (isLoading) {
     return <div className="p-8">Loading history...</div>;
@@ -107,4 +106,3 @@ const History = () => {
 };
 
 export default History;
-

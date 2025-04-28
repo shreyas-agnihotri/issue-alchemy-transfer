@@ -1,6 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { CloneResult, JiraIssue } from '@/types/jira';
+import { db_ops } from '@/services/database';
 
 interface CloneHistoryRecord {
   source_project_id: string;
@@ -12,70 +11,32 @@ interface CloneHistoryRecord {
 
 export const useCloneDatabase = () => {
   const createCloneHistory = async (record: CloneHistoryRecord) => {
-    const { data, error } = await supabase
-      .from('clone_history')
-      .insert(record)
-      .select()
-      .single();
-      
-    if (error) throw error;
-    return data;
+    return db_ops.createCloneHistory(record);
   };
 
   const updateCloneHistory = async (id: string, updates: Partial<CloneHistoryRecord>) => {
-    const { error } = await supabase
-      .from('clone_history')
-      .update(updates)
-      .eq('id', id);
-      
-    if (error) throw error;
+    return db_ops.updateCloneHistory(id, updates);
   };
 
   const logIssueResult = async (
     cloneHistoryId: string,
-    sourceIssue: JiraIssue,
-    result: CloneResult
+    sourceIssue: any,
+    result: any
   ) => {
-    const { error } = await supabase
-      .from('clone_issue_results')
-      .insert({
-        clone_history_id: cloneHistoryId,
-        source_issue_id: sourceIssue.id,
-        source_issue_key: sourceIssue.key,
-        target_issue_id: result.targetIssue?.id,
-        target_issue_key: result.targetIssue?.key,
-        status: result.status,
-        error_message: result.error
-      });
-      
-    if (error) throw error;
-  };
-
-  const cloneIssueLinks = async (idMapping: Record<string, string>) => {
-    const { data: existingLinks } = await supabase
-      .from('issue_links')
-      .select('*')
-      .in('source_issue_id', Object.keys(idMapping));
-
-    if (existingLinks) {
-      for (const link of existingLinks) {
-        if (idMapping[link.source_issue_id] && idMapping[link.target_issue_id]) {
-          await supabase
-            .from('issue_links')
-            .insert({
-              source_issue_id: idMapping[link.source_issue_id],
-              target_issue_id: idMapping[link.target_issue_id],
-              metadata: link.metadata
-            });
-        }
-      }
-    }
+    return db_ops.logIssueResult({
+      clone_history_id: cloneHistoryId,
+      source_issue_id: sourceIssue.id,
+      source_issue_key: sourceIssue.key,
+      target_issue_id: result.targetIssue?.id,
+      target_issue_key: result.targetIssue?.key,
+      status: result.status,
+      error_message: result.error
+    });
   };
 
   return {
     createCloneHistory,
     updateCloneHistory,
-    logIssueResult,
-    cloneIssueLinks
+    logIssueResult
   };
 };

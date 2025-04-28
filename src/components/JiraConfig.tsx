@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { db_ops } from '@/services/database';
 
 interface JiraConfigFormData {
   jira_url: string;
@@ -23,11 +22,7 @@ const JiraConfig = () => {
 
   const onSubmit = async (data: JiraConfigFormData) => {
     try {
-      const { error } = await supabase
-        .from('jira_configs')
-        .upsert([data], { onConflict: 'user_email' });
-
-      if (error) throw error;
+      db_ops.saveJiraConfig(data);
 
       toast({
         title: "Configuration saved",
