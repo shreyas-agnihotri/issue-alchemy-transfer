@@ -4,7 +4,7 @@ import { JiraConfig, JiraSearchResponse, JiraError } from './types';
 class JiraClient {
   private config: JiraConfig | null = null;
 
-  setConfig(config: JiraConfig) {
+  setConfig(config: JiraConfig | null) {
     this.config = config;
   }
 

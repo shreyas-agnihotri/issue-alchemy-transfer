@@ -1,4 +1,3 @@
-
 import { DatabaseOperations, CloneHistoryRecord, JiraConfigRecord, OAuthTokenRecord } from './types';
 
 // Mock database operations for browser environment
@@ -16,18 +15,14 @@ export const mockDbOps: DatabaseOperations = {
 
   getCloneHistory: () => {
     console.log('Mock getCloneHistory');
-    return Promise.resolve([
-      {
-        id: '1',
-        source_project_id: 'DEMO',
-        target_project_id: 'TARGET',
-        total_issues: 10,
-        successful_issues: 8,
-        failed_issues: 2,
-        created_at: new Date().toISOString(),
-        query: 'project = DEMO'
-      }
-    ]);
+    const history = localStorage.getItem('cloneHistory');
+    return Promise.resolve(history ? JSON.parse(history) : []);
+  },
+
+  resetCloneHistory: () => {
+    console.log('Mock resetCloneHistory');
+    localStorage.removeItem('cloneHistory');
+    return Promise.resolve();
   },
 
   logIssueResult: (data) => {
@@ -45,6 +40,12 @@ export const mockDbOps: DatabaseOperations = {
     console.log('Mock getJiraConfig');
     const config = localStorage.getItem('jiraConfig');
     return Promise.resolve(config ? JSON.parse(config) : null);
+  },
+
+  resetJiraConfig: () => {
+    console.log('Mock resetJiraConfig');
+    localStorage.removeItem('jiraConfig');
+    return Promise.resolve();
   },
   
   saveOAuthToken: (token) => {
