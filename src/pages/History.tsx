@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CloneHistoryRecord } from '@/services/database/types';
 import {
   Table,
   TableBody,
@@ -17,26 +18,15 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 
-interface HistoryRecord {
-  id: string;
-  source_project_id: string;
-  target_project_id: string;
-  total_issues: number;
-  successful_issues: number;
-  failed_issues: number;
-  created_at: string;
-  query?: string;
-}
-
 const History = () => {
   const { toast } = useToast();
-  const [history, setHistory] = React.useState<HistoryRecord[]>([]);
+  const [history, setHistory] = React.useState<CloneHistoryRecord[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const records = db_ops.getCloneHistory();
+        const records = await db_ops.getCloneHistory();
         setHistory(Array.isArray(records) ? records : []);
       } catch (error) {
         console.error('Failed to fetch history:', error);
@@ -92,7 +82,7 @@ const History = () => {
                   history.map((record) => (
                     <TableRow key={record.id}>
                       <TableCell>
-                        {format(new Date(record.created_at), 'MMM d, yyyy HH:mm')}
+                        {record.created_at ? format(new Date(record.created_at), 'MMM d, yyyy HH:mm') : 'N/A'}
                       </TableCell>
                       <TableCell className="break-words">
                         <div className="max-h-[100px] overflow-y-auto">

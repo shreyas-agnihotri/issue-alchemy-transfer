@@ -8,3 +8,6 @@ const isBrowser = typeof window !== 'undefined' && !window.navigator.userAgent.i
 
 // Export the appropriate database implementation
 export const db_ops: DatabaseOperations = isBrowser ? mockDbOps : createElectronDb();
+
+// Re-export types for external use
+export * from './types';

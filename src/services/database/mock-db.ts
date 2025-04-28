@@ -16,7 +16,7 @@ export const mockDbOps: DatabaseOperations = {
 
   getCloneHistory: () => {
     console.log('Mock getCloneHistory');
-    return [
+    return Promise.resolve([
       {
         id: '1',
         source_project_id: 'DEMO',
@@ -27,7 +27,7 @@ export const mockDbOps: DatabaseOperations = {
         created_at: new Date().toISOString(),
         query: 'project = DEMO'
       }
-    ];
+    ]);
   },
 
   logIssueResult: (data) => {
@@ -44,7 +44,7 @@ export const mockDbOps: DatabaseOperations = {
   getJiraConfig: () => {
     console.log('Mock getJiraConfig');
     const config = localStorage.getItem('jiraConfig');
-    return config ? JSON.parse(config) : null;
+    return Promise.resolve(config ? JSON.parse(config) : null);
   },
   
   saveOAuthToken: (token) => {
@@ -56,6 +56,6 @@ export const mockDbOps: DatabaseOperations = {
   getOAuthToken: () => {
     console.log('Mock getOAuthToken');
     const token = localStorage.getItem('jiraOAuthToken');
-    return token ? JSON.parse(token) : null;
+    return Promise.resolve(token ? JSON.parse(token) : null);
   }
 };

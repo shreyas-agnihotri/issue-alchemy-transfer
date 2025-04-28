@@ -1,5 +1,6 @@
 
 import { DatabaseOperations } from './types';
+import { mockDbOps } from './mock-db';
 
 export const createElectronDb = (): DatabaseOperations => {
   try {
@@ -90,7 +91,7 @@ export const createElectronDb = (): DatabaseOperations => {
             data.query
           );
           
-          return { id, ...data };
+          return Promise.resolve({ id, ...data });
         },
 
         updateCloneHistory: (id, updates) => {
@@ -101,11 +102,13 @@ export const createElectronDb = (): DatabaseOperations => {
             WHERE id = ?
           `);
           
-          return stmt.run(updates.successful_issues, updates.failed_issues, id);
+          stmt.run(updates.successful_issues, updates.failed_issues, id);
+          return Promise.resolve({ id, ...updates });
         },
 
         getCloneHistory: () => {
-          return db.prepare('SELECT * FROM clone_history ORDER BY created_at DESC').all();
+          const results = db.prepare('SELECT * FROM clone_history ORDER BY created_at DESC').all();
+          return Promise.resolve(results);
         },
 
         logIssueResult: (data) => {
@@ -115,7 +118,7 @@ export const createElectronDb = (): DatabaseOperations => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           `);
           
-          return stmt.run(
+          const result = stmt.run(
             crypto.randomUUID(),
             data.clone_history_id,
             data.source_issue_id,
@@ -125,6 +128,8 @@ export const createElectronDb = (): DatabaseOperations => {
             data.status,
             data.error_message
           );
+          
+          return Promise.resolve(result);
         },
 
         saveJiraConfig: (config) => {
@@ -134,7 +139,7 @@ export const createElectronDb = (): DatabaseOperations => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           `);
           
-          return stmt.run(
+          const result = stmt.run(
             crypto.randomUUID(),
             config.jira_url,
             config.api_key || null,
@@ -144,10 +149,13 @@ export const createElectronDb = (): DatabaseOperations => {
             config.user_email || null,
             config.jql_filter
           );
+          
+          return Promise.resolve(result);
         },
 
         getJiraConfig: () => {
-          return db.prepare('SELECT * FROM jira_configs ORDER BY created_at DESC LIMIT 1').get();
+          const result = db.prepare('SELECT * FROM jira_configs ORDER BY created_at DESC LIMIT 1').get();
+          return Promise.resolve(result);
         },
         
         saveOAuthToken: (token) => {
@@ -157,7 +165,7 @@ export const createElectronDb = (): DatabaseOperations => {
             VALUES (?, ?, ?, ?, ?, ?)
           `);
           
-          return stmt.run(
+          const result = stmt.run(
             crypto.randomUUID(),
             token.access_token,
             token.refresh_token || null,
@@ -165,10 +173,13 @@ export const createElectronDb = (): DatabaseOperations => {
             token.expires_at,
             token.scope || null
           );
+          
+          return Promise.resolve(result);
         },
         
         getOAuthToken: () => {
-          return db.prepare('SELECT * FROM oauth_tokens ORDER BY created_at DESC LIMIT 1').get();
+          const result = db.prepare('SELECT * FROM oauth_tokens ORDER BY created_at DESC LIMIT 1').get();
+          return Promise.resolve(result);
         }
       };
     }

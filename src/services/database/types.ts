@@ -41,10 +41,10 @@ export interface OAuthTokenRecord {
 export interface DatabaseOperations {
   createCloneHistory: (data: Omit<CloneHistoryRecord, 'id'>) => Promise<CloneHistoryRecord>;
   updateCloneHistory: (id: string, updates: Partial<CloneHistoryRecord>) => Promise<any>;
-  getCloneHistory: () => Promise<CloneHistoryRecord[]> | CloneHistoryRecord[];
+  getCloneHistory: () => Promise<CloneHistoryRecord[]>;
   logIssueResult: (data: IssueResultRecord) => Promise<any>;
   saveJiraConfig: (config: JiraConfigRecord) => Promise<any>;
-  getJiraConfig: (email?: string) => Promise<JiraConfigRecord | null> | null;
+  getJiraConfig: (email?: string) => Promise<JiraConfigRecord | null>;
   saveOAuthToken: (token: OAuthTokenRecord) => Promise<any>;
-  getOAuthToken: () => Promise<OAuthTokenRecord | null> | null;
+  getOAuthToken: () => Promise<OAuthTokenRecord | null>;
 }
