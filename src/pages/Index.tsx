@@ -11,8 +11,11 @@ import JqlInput from '@/components/JqlInput';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
 import { mockProjects } from '@/lib/mock-data';
+import { useJiraConfig } from '@/hooks/useJiraConfig';
 
 const Index = () => {
+  useJiraConfig();
+
   const {
     targetProjectId,
     setTargetProjectId,

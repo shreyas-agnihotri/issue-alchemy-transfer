@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,14 +18,27 @@ export interface JiraApiKeyFormData {
 
 export function ApiKeyForm() {
   const { toast } = useToast();
-  const form = useForm<JiraApiKeyFormData>({
-    defaultValues: {
-      jira_url: '',
-      api_key: '',
-      user_email: '',
-      jql_filter: ''
-    }
-  });
+  const form = useForm<JiraApiKeyFormData>();
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await db_ops.getJiraConfig();
+        if (config && config.auth_method === 'api-key') {
+          form.reset({
+            jira_url: config.jira_url,
+            api_key: config.api_key || '',
+            user_email: config.user_email || '',
+            jql_filter: config.jql_filter || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error loading API key config:', error);
+      }
+    };
+
+    loadConfig();
+  }, [form]);
 
   const onSubmit = async (data: JiraApiKeyFormData) => {
     try {

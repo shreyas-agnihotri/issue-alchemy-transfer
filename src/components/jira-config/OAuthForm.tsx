@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +30,33 @@ export function OAuthForm() {
       jql_filter: ''
     }
   });
+
+  // Load saved configuration
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        const config = await db_ops.getJiraConfig();
+        const token = await db_ops.getOAuthToken();
+        
+        if (config && config.auth_method === 'oauth') {
+          form.reset({
+            jira_url: config.jira_url,
+            oauth_client_id: config.oauth_client_id || '',
+            oauth_client_secret: config.oauth_client_secret || '',
+            jql_filter: config.jql_filter || ''
+          });
+          
+          if (token) {
+            setIsAuthenticated(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading OAuth config:', error);
+      }
+    };
+
+    loadConfig();
+  }, [form]);
 
   const onSubmit = async (data: JiraOAuthFormData) => {
     try {
