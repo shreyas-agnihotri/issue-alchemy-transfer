@@ -11,7 +11,6 @@ import ClonePageLayout from '@/components/ClonePageLayout';
 import JqlInput from '@/components/JqlInput';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
-import { mockProjects } from '@/lib/mock-data';
 import { useJiraConfig } from '@/hooks/useJiraConfig';
 import { db_ops } from '@/services/database';
 
@@ -77,7 +76,6 @@ const Index = () => {
         />
         
         <ProjectSelector
-          projects={mockProjects}
           selectedTargetProject={targetProjectId}
           onTargetProjectChange={setTargetProjectId}
           isLoading={isLoading}

@@ -3,20 +3,22 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { JiraProject } from '@/types/jira';
+import { useProjects } from '@/hooks/useProjects';
 
 interface ProjectSelectorProps {
-  projects: JiraProject[];
   selectedTargetProject: string;
   onTargetProjectChange: (value: string) => void;
   isLoading?: boolean;
 }
 
 const ProjectSelector: React.FC<ProjectSelectorProps> = ({
-  projects,
   selectedTargetProject,
   onTargetProjectChange,
-  isLoading = false,
+  isLoading: externalLoading = false,
 }) => {
+  const { projects, isLoading: projectsLoading } = useProjects();
+  
+  const isLoading = externalLoading || projectsLoading;
   const targetProjects = projects.filter(p => p.isProductDiscovery);
   
   return (
