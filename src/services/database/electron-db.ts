@@ -180,6 +180,30 @@ export const createElectronDb = (): DatabaseOperations => {
         getOAuthToken: () => {
           const result = db.prepare('SELECT * FROM oauth_tokens ORDER BY created_at DESC LIMIT 1').get();
           return Promise.resolve(result);
+        },
+
+        // Add the missing functions
+        resetCloneHistory: () => {
+          const stmt = db.prepare('DELETE FROM clone_history');
+          stmt.run();
+          
+          // Also delete related issue results
+          const stmtIssueResults = db.prepare('DELETE FROM clone_issue_results');
+          stmtIssueResults.run();
+          
+          return Promise.resolve();
+        },
+        
+        resetJiraConfig: () => {
+          // Delete from jira_configs table
+          const stmtConfig = db.prepare('DELETE FROM jira_configs');
+          stmtConfig.run();
+          
+          // Also delete OAuth tokens
+          const stmtToken = db.prepare('DELETE FROM oauth_tokens');
+          stmtToken.run();
+          
+          return Promise.resolve();
         }
       };
     }
