@@ -46,7 +46,7 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
     
     if (urlValidation.isValid && url) {
       // Extract issue key from URL - support multiple URL formats
-      const issueKeyMatch = url.match(/\/(?:browse|issues)\/([A-Z]+-\d+)/);
+      const issueKeyMatch = url.match(/\/(?:browse|issues)\/([A-Z]+-\d+)/i);
       if (issueKeyMatch) {
         const issueKey = issueKeyMatch[1];
         onJqlChange(`key = ${issueKey}`);
@@ -64,8 +64,14 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
       return;
     }
     
-    // Basic validation for simple issue key format
-    if (/^[A-Z]+-\d+$/.test(value.trim())) {
+    // Basic validation for simple issue key format - case insensitive matching
+    if (/^[A-Z]+-\d+$/i.test(value.trim())) {
+      // Convert the key to uppercase if it's not already
+      const issueKey = value.trim().toUpperCase();
+      if (issueKey !== value.trim()) {
+        // Auto-correct the case
+        onJqlChange(issueKey);
+      }
       setJqlError(undefined);
       return;
     }

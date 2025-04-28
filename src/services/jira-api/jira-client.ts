@@ -109,6 +109,11 @@ class JiraClient {
   }
 
   async searchIssues(jql: string): Promise<JiraSearchResponse> {
+    // Improved validation before making the request
+    if (!jql || jql.trim() === '') {
+      throw new Error('JQL query cannot be empty');
+    }
+
     const sanitizedJql = this.sanitizeJql(jql);
     console.log('Searching with sanitized JQL:', sanitizedJql);
     
@@ -132,11 +137,40 @@ class JiraClient {
       ]
     };
     
-    return this.request<JiraSearchResponse>('search', {
-      method: 'POST',
-      // Fix: Convert the body object to a JSON string
-      body: JSON.stringify(requestBody)
-    });
+    try {
+      return await this.request<JiraSearchResponse>('search', {
+        method: 'POST',
+        body: JSON.stringify(requestBody)
+      });
+    } catch (error: any) {
+      // Enhanced error handling for common Jira API issues
+      if (error.status === 400 && error.error && error.error.errorMessages) {
+        const errorMsg = error.error.errorMessages[0];
+        if (errorMsg.includes('does not exist or you do not have permission')) {
+          // Re-throw with a more user-friendly message
+          const issueKey = this.extractIssueKeyFromJql(sanitizedJql);
+          error.message = `Issue ${issueKey ? `'${issueKey}'` : ''} does not exist or you do not have permission to access it.`;
+        }
+      }
+      throw error;
+    }
+  }
+
+  // Extract issue key from a JQL query if it's a simple key search
+  private extractIssueKeyFromJql(jql: string): string | null {
+    // Match patterns like 'key = "ABC-123"' or 'key="ABC-123"'
+    const keyMatch = jql.match(/key\s*=\s*["']?([A-Z]+-\d+)["']?/i);
+    if (keyMatch && keyMatch[1]) {
+      return keyMatch[1];
+    }
+    
+    // Match simple issue key pattern
+    const simpleKeyMatch = jql.match(/^["']?([A-Z]+-\d+)["']?$/);
+    if (simpleKeyMatch && simpleKeyMatch[1]) {
+      return simpleKeyMatch[1];
+    }
+    
+    return null;
   }
 
   // Helper method to sanitize and normalize JQL
@@ -150,9 +184,19 @@ class JiraClient {
     }
     
     // If it's just a key = something without quotes, add quotes
-    const keyMatch = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/);
+    const keyMatch = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/i);
     if (keyMatch && keyMatch[1]) {
       return `key = "${keyMatch[1]}"`;
+    }
+    
+    // Check if the JQL already contains quotes around the issue key
+    const keyWithQuotesMatch = sanitized.match(/key\s*=\s*["']([A-Z]+-\d+)["']/i);
+    if (!keyWithQuotesMatch && sanitized.includes('key =')) {
+      // Add quotes around the issue key if it doesn't have them
+      const keyValueMatch = sanitized.match(/key\s*=\s*([A-Z]+-\d+)/i);
+      if (keyValueMatch && keyValueMatch[1]) {
+        sanitized = sanitized.replace(keyValueMatch[0], `key = "${keyValueMatch[1]}"`);
+      }
     }
     
     return sanitized;
@@ -178,7 +222,6 @@ class JiraClient {
     // Create the new issue
     return this.request('issue', {
       method: 'POST',
-      // Fix: Convert the body object to a JSON string
       body: JSON.stringify(newIssueData)
     });
   }

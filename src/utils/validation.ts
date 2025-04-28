@@ -4,13 +4,18 @@ import { JiraIssue } from "@/types/jira";
 
 // JQL validation schema
 export const jqlSchema = z.string().min(1).refine((val) => {
-  // Handle simple issue key format (PROJECT-123)
-  if (/^[A-Z]+-\d+$/.test(val.trim())) {
+  // Handle simple issue key format (PROJECT-123) - case insensitive
+  if (/^[A-Z]+-\d+$/i.test(val.trim())) {
     return true;
   }
   
-  // Handle key = PROJECT-123 format
+  // Handle key = PROJECT-123 format - case insensitive
   if (/^key\s*=\s*[A-Z]+-\d+$/i.test(val.trim())) {
+    return true;
+  }
+  
+  // Handle quoted key format
+  if (/^key\s*=\s*["'][A-Z]+-\d+["']$/i.test(val.trim())) {
     return true;
   }
   
@@ -32,8 +37,8 @@ export const validateJql = (jql: string) => {
     return { isValid: true, message: "" };
   }
   
-  // Special case for simple issue key
-  if (/^[A-Z]+-\d+$/.test(jql.trim())) {
+  // Special case for simple issue key - case insensitive
+  if (/^[A-Z]+-\d+$/i.test(jql.trim())) {
     return { isValid: true, message: "" };
   }
   
@@ -49,8 +54,8 @@ export const validateJiraUrl = (url: string) => {
   if (url === "") return { isValid: true, message: "" };
   
   // Generic URL validation for Jira instances - matches company hosted and cloud instances
-  // Updated pattern to match a wider variety of Jira URL formats
-  const isValid = /^https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(?:\/[a-zA-Z0-9-_]*)?\/(?:browse|issues)\/[A-Z]+-\d+(?:[?#].*)?$/.test(url);
+  // Updated pattern to match a wider variety of Jira URL formats - case insensitive
+  const isValid = /^https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(?:\/[a-zA-Z0-9-_]*)?\/(?:browse|issues)\/[A-Z]+-\d+(?:[?#].*)?$/i.test(url);
   
   return {
     isValid,

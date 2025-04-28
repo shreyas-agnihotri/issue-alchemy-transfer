@@ -79,11 +79,19 @@ export const useCloneSearch = ({
       
       // Handle specific error cases
       if (error.status === 400) {
-        toast({
-          title: "Invalid Search Query",
-          description: errorMessage || "The JQL syntax appears to be invalid. Please check your query.",
-          variant: "destructive",
-        });
+        if (errorMessage.includes('does not exist or you do not have permission')) {
+          toast({
+            title: "Issue not found",
+            description: "The specified issue does not exist or you don't have permission to access it. Please verify the issue key and try again.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Invalid Search Query",
+            description: errorMessage || "The JQL syntax appears to be invalid. Please check your query.",
+            variant: "destructive",
+          });
+        }
       } else if (error.status === 401) {
         toast({
           title: "Authentication Error",
