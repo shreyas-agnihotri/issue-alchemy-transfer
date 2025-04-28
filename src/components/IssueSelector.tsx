@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,6 +14,7 @@ import {
   PaginationPrevious 
 } from '@/components/ui/pagination';
 import { usePagination } from '@/hooks/usePagination';
+import { cn } from '@/lib/utils';
 
 interface IssueSelectorProps {
   issues: JiraIssue[];
@@ -175,10 +177,16 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious 
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                  />
+                  {currentPage === 1 ? (
+                    <PaginationPrevious 
+                      className="pointer-events-none opacity-50" 
+                      onClick={() => {}}
+                    />
+                  ) : (
+                    <PaginationPrevious 
+                      onClick={() => goToPage(currentPage - 1)}
+                    />
+                  )}
                 </PaginationItem>
                 
                 {Array.from({ length: totalPages }).map((_, index) => (
@@ -193,10 +201,16 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
                 ))}
                 
                 <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                  />
+                  {currentPage === totalPages ? (
+                    <PaginationNext 
+                      className="pointer-events-none opacity-50" 
+                      onClick={() => {}}
+                    />
+                  ) : (
+                    <PaginationNext 
+                      onClick={() => goToPage(currentPage + 1)}
+                    />
+                  )}
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
