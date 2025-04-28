@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -32,6 +31,16 @@ export function ApiKeyForm() {
       await db_ops.saveJiraConfig({
         ...data,
         auth_method: 'api-key'
+      });
+
+      // Configure the Jira client with the new credentials
+      jiraClient.setConfig({
+        baseUrl: data.jira_url,
+        auth: {
+          type: 'api-key',
+          apiKey: data.api_key,
+          email: data.user_email
+        }
       });
 
       toast({
