@@ -1,5 +1,6 @@
 
 import { Database } from 'better-sqlite3';
+import { v4 as uuidv4 } from 'uuid';
 
 export const createIssueResultsOperations = (db: Database) => ({
   logIssueResult: (data: any) => {
@@ -9,8 +10,9 @@ export const createIssueResultsOperations = (db: Database) => ({
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
+    // Use uuid instead of crypto.randomUUID() for compatibility
     const result = stmt.run(
-      crypto.randomUUID(),
+      uuidv4(),
       data.clone_history_id,
       data.source_issue_id,
       data.source_issue_key,
