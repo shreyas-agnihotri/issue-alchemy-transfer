@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const url = require('url');
@@ -17,6 +18,12 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, '../public/favicon.ico')
+  });
+
+  // Disable Autofill warnings
+  // This prevents the errors about Autofill.enable and Autofill.setAddresses
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    callback({});
   });
 
   // Load the app
