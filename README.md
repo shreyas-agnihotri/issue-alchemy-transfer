@@ -30,6 +30,24 @@ npm run electron
 npm run electron:build
 ```
 
+### macOS-specific Setup
+
+If you're on macOS and encounter issues installing native dependencies (particularly with better-sqlite3), run these commands:
+
+```sh
+# Install Xcode Command Line Tools
+xcode-select --install
+
+# Install SQLite3 via Homebrew
+brew install sqlite3
+
+# Install node-gyp globally (helps with native module compilation)
+npm install -g node-gyp
+
+# Rebuild the better-sqlite3 module
+npm rebuild better-sqlite3 --build-from-source
+```
+
 ## Troubleshooting
 
 If you encounter issues during installation:
