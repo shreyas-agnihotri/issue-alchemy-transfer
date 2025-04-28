@@ -69,9 +69,9 @@ try {
 }
 
 // Run the script to update package.json
-exec('node electron/package-scripts.js', (error, stdout, stderr) => {
+exec('node electron/package-scripts.cjs', (error, stdout, stderr) => {
   if (error) {
-    console.error(`Error executing package-scripts.js: ${error.message}`);
+    console.error(`Error executing package-scripts.cjs: ${error.message}`);
     return;
   }
   if (stderr) {
