@@ -2,6 +2,13 @@
 import { useState } from 'react';
 import { JiraIssue, CloneResult } from '@/types/jira';
 
+export interface CloneOptions {
+  includeSubtasks: boolean;
+  includeLinks: boolean;
+  keepRelationships: boolean;
+  retryFailed: boolean;
+}
+
 export const useCloneState = () => {
   const [targetProjectId, setTargetProjectId] = useState<string>('');
   const [jql, setJql] = useState<string>('');
@@ -11,6 +18,12 @@ export const useCloneState = () => {
   const [isCloning, setIsCloning] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [cloneResults, setCloneResults] = useState<CloneResult[]>([]);
+  const [cloneOptions, setCloneOptions] = useState<CloneOptions>({
+    includeSubtasks: true,
+    includeLinks: true,
+    keepRelationships: true,
+    retryFailed: false
+  });
 
   return {
     targetProjectId,
@@ -29,5 +42,7 @@ export const useCloneState = () => {
     setShowConfirmation,
     cloneResults,
     setCloneResults,
+    cloneOptions,
+    setCloneOptions,
   };
 };

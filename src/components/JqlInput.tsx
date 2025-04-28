@@ -1,12 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, Filter, Link2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { validateJiraUrl, validateJql } from '@/utils/validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface JqlInputProps {
   jql: string;
@@ -19,6 +22,11 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
   const [issueUrl, setIssueUrl] = useState('');
   const [urlError, setUrlError] = useState<string | undefined>();
   const [jqlError, setJqlError] = useState<string | undefined>();
+  const [filterOptions, setFilterOptions] = useState({
+    includeSubtasks: true,
+    includeLinks: true,
+    keepRelationships: true
+  });
 
   const handleUrlPaste = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
@@ -28,7 +36,6 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
     setUrlError(urlValidation.message);
     
     if (urlValidation.isValid && url) {
-      // Extract issue key from URL if it matches Jira URL pattern
       const issueKeyMatch = url.match(/\/browse\/([A-Z]+-\d+)/);
       if (issueKeyMatch) {
         const issueKey = issueKeyMatch[1];
@@ -65,8 +72,53 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Search Issues</CardTitle>
+        <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <h4 className="font-medium leading-none mb-3">Search Options</h4>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="subtasks"
+                    checked={filterOptions.includeSubtasks}
+                    onCheckedChange={(checked) =>
+                      setFilterOptions(prev => ({ ...prev, includeSubtasks: !!checked }))
+                    }
+                  />
+                  <Label htmlFor="subtasks">Include subtasks</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="links"
+                    checked={filterOptions.includeLinks}
+                    onCheckedChange={(checked) =>
+                      setFilterOptions(prev => ({ ...prev, includeLinks: !!checked }))
+                    }
+                  />
+                  <Label htmlFor="links">Include linked issues</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="relationships"
+                    checked={filterOptions.keepRelationships}
+                    onCheckedChange={(checked) =>
+                      setFilterOptions(prev => ({ ...prev, keepRelationships: !!checked }))
+                    }
+                  />
+                  <Label htmlFor="relationships">Maintain issue relationships</Label>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
