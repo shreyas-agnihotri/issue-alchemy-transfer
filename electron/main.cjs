@@ -1,3 +1,4 @@
+
 const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const url = require('url');
@@ -177,15 +178,29 @@ app.on('activate', () => {
 
 // IPC handler for making HTTP requests
 ipcMain.handle('make-request', async (event, { url, options }) => {
-  console.log('Making request to:', url);
+  console.log('Main process: Making request to:', url);
+  console.log('Request options:', JSON.stringify(options, null, 2));
+  
   try {
+    // Process headers to ensure they're in the right format
+    const fetchOptions = { ...options };
+    
+    // Ensure method is set
+    if (!fetchOptions.method) {
+      fetchOptions.method = 'GET';
+    }
+    
+    console.log('Making request with fetch options:', JSON.stringify(fetchOptions, null, 2));
+    
     // Use node-fetch to make the request
-    const response = await fetch(url, options);
+    const response = await fetch(url, fetchOptions);
     
     // Get the status and headers
     const status = response.status;
     const statusText = response.statusText;
     const ok = response.ok;
+    
+    console.log('Response status:', status, statusText);
     
     // Parse the response based on content type
     let data;

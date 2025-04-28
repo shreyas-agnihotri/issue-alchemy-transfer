@@ -15,7 +15,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Expose protected methods for API requests and OAuth handling
 contextBridge.exposeInMainWorld('electron', {
-  makeRequest: (params) => ipcRenderer.invoke('make-request', params),
+  makeRequest: (params) => {
+    console.log('Preload: Making request to:', params.url);
+    return ipcRenderer.invoke('make-request', params);
+  },
   exchangeOAuthCode: (data) => ipcRenderer.invoke('exchange-oauth-code', data),
   refreshOAuthToken: (data) => ipcRenderer.invoke('refresh-oauth-token', data),
   

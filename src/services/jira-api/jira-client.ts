@@ -1,3 +1,4 @@
+
 import { JiraConfig, JiraSearchResponse, JiraError } from './types';
 
 class JiraClient {
@@ -16,6 +17,7 @@ class JiraClient {
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json'
     };
 
     if (this.config.auth.type === 'api-key') {
@@ -38,15 +40,19 @@ class JiraClient {
     // Use Electron's IPC for requests when in Electron environment to bypass CORS
     if (this.isElectron && window.electron) {
       try {
+        console.log('Using Electron IPC for request:', url);
+        const headers = this.getHeaders();
+        
         const response = await window.electron.makeRequest({
           url,
           options: {
             ...options,
-            headers: this.getHeaders()
+            headers
           }
         });
         
         if (!response.ok) {
+          console.error('Electron request failed:', response.status, response.statusText);
           const error: JiraError = {
             status: response.status,
             message: response.statusText || 'Request failed',
@@ -65,10 +71,7 @@ class JiraClient {
     // Browser fetch implementation
     const response = await fetch(url, {
       ...options,
-      headers: {
-        ...this.getHeaders(),
-        ...options.headers,
-      },
+      headers: this.getHeaders(),
     });
 
     if (!response.ok) {
