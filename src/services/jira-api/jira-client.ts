@@ -112,26 +112,30 @@ class JiraClient {
     const sanitizedJql = this.sanitizeJql(jql);
     console.log('Searching with sanitized JQL:', sanitizedJql);
     
+    // Fix: Create a request body object and stringify it properly
+    const requestBody = {
+      jql: sanitizedJql,
+      maxResults: 50,
+      fields: [
+        'summary',
+        'description',
+        'issuetype',
+        'status',
+        'priority',
+        'assignee',
+        'reporter',
+        'labels',
+        'parent',
+        'created',
+        'updated',
+        'project'
+      ]
+    };
+    
     return this.request<JiraSearchResponse>('search', {
       method: 'POST',
-      body: {
-        jql: sanitizedJql,
-        maxResults: 50,
-        fields: [
-          'summary',
-          'description',
-          'issuetype',
-          'status',
-          'priority',
-          'assignee',
-          'reporter',
-          'labels',
-          'parent',
-          'created',
-          'updated',
-          'project'
-        ]
-      }
+      // Fix: Convert the body object to a JSON string
+      body: JSON.stringify(requestBody)
     });
   }
 
@@ -159,7 +163,7 @@ class JiraClient {
     const issue = await this.request<{fields: any}>(`issue/${issueKey}`);
     
     // Prepare the new issue data
-    const newIssue = {
+    const newIssueData = {
       fields: {
         ...issue.fields,
         project: { key: targetProjectKey },
@@ -174,7 +178,8 @@ class JiraClient {
     // Create the new issue
     return this.request('issue', {
       method: 'POST',
-      body: newIssue
+      // Fix: Convert the body object to a JSON string
+      body: JSON.stringify(newIssueData)
     });
   }
 }
