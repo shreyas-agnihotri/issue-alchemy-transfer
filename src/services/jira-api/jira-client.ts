@@ -3,6 +3,7 @@ import { JiraConfig, JiraSearchResponse, JiraError } from './types';
 
 class JiraClient {
   private config: JiraConfig | null = null;
+  private isElectron = !!window.electron;
 
   setConfig(config: JiraConfig | null) {
     this.config = config;
@@ -33,6 +34,35 @@ class JiraClient {
     }
 
     const url = `${this.config.baseUrl}/rest/api/3/${endpoint}`;
+    
+    // Use Electron's IPC for requests when in Electron environment to bypass CORS
+    if (this.isElectron) {
+      try {
+        const response = await window.electron.makeRequest({
+          url,
+          options: {
+            ...options,
+            headers: this.getHeaders()
+          }
+        });
+        
+        if (!response.ok) {
+          const error: JiraError = {
+            status: response.status,
+            message: response.statusText || 'Request failed',
+            error: response.data
+          };
+          throw error;
+        }
+        
+        return response.data;
+      } catch (error: any) {
+        console.error('Electron request error:', error);
+        throw error;
+      }
+    }
+    
+    // Browser fetch implementation
     const response = await fetch(url, {
       ...options,
       headers: {

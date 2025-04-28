@@ -58,11 +58,21 @@ export const useCloneSearch = ({
       }
     } catch (error: any) {
       console.error("Search error:", error);
-      toast({
-        title: "Search failed",
-        description: error.message || "An error occurred while searching for issues",
-        variant: "destructive",
-      });
+      
+      // Handle CORS errors specifically
+      if (error.message?.includes('CORS') || error.status === 0) {
+        toast({
+          title: "CORS Error",
+          description: "Access blocked by CORS policy. Try using the desktop app instead of the browser, or configure your JIRA to allow cross-origin requests.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Search failed",
+          description: error.message || "An error occurred while searching for issues",
+          variant: "destructive",
+        });
+      }
       setIssues([]);
     } finally {
       setIsLoading(false);
