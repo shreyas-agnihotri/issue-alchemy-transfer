@@ -1,10 +1,18 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { JiraIssue } from '@/types/jira';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
+import { usePagination } from '@/hooks/usePagination';
 
 interface IssueSelectorProps {
   issues: JiraIssue[];
@@ -19,6 +27,11 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
   onIssueSelect,
   isLoading = false,
 }) => {
+  const { currentItems, currentPage, totalPages, goToPage } = usePagination({
+    items: issues,
+    itemsPerPage: 5
+  });
+
   const allSelected = issues.length > 0 && issues.length === selectedIssues.length;
   
   const handleSelectAll = (checked: boolean) => {
@@ -101,7 +114,7 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {issues.map((issue) => {
+          {currentItems.map((issue) => {
             const isSelected = selectedIssues.includes(issue.id);
             
             return (
@@ -156,10 +169,42 @@ const IssueSelector: React.FC<IssueSelectorProps> = ({
             );
           })}
         </div>
+        
+        {totalPages > 1 && (
+          <div className="mt-4">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious 
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  />
+                </PaginationItem>
+                
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      isActive={currentPage === index + 1}
+                      onClick={() => goToPage(index + 1)}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 };
 
 export default IssueSelector;
-
