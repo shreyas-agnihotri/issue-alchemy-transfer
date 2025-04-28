@@ -30,7 +30,7 @@ try {
 
   // Add electron main if it doesn't exist
   if (!packageJson.main) {
-    packageJson.main = "electron/main.js";
+    packageJson.main = "electron/main.cjs";
   }
 
   // Write the updated package.json

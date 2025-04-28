@@ -13,7 +13,7 @@ waitOn({
   timeout: 30000
 }).then(() => {
   // Start Electron with dev server URL
-  const electronProcess = spawn(electron, [path.join(__dirname, '../electron/main.js')], {
+  const electronProcess = spawn(electron, [path.join(__dirname, '../electron/main.cjs')], {
     env: {
       ...process.env,
       ELECTRON_START_URL: 'http://localhost:8080',
