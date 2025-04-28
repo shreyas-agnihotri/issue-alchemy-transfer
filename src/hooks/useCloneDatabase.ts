@@ -7,6 +7,7 @@ interface CloneHistoryRecord {
   total_issues: number;
   successful_issues: number;
   failed_issues: number;
+  query?: string;
 }
 
 export const useCloneDatabase = () => {
@@ -33,10 +34,19 @@ export const useCloneDatabase = () => {
       error_message: result.error
     });
   };
+  
+  // Add the missing cloneIssueLinks function
+  const cloneIssueLinks = async (idMapping: Record<string, string>) => {
+    console.log('Cloning issue links with mapping:', idMapping);
+    // This would normally save the issue links to the database
+    // For now, we'll just log the mapping
+    return Promise.resolve(idMapping);
+  };
 
   return {
     createCloneHistory,
     updateCloneHistory,
-    logIssueResult
+    logIssueResult,
+    cloneIssueLinks
   };
 };

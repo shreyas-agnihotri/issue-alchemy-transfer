@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { db_ops } from '@/services/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
 
 interface HistoryRecord {
   id: string;
@@ -27,19 +29,29 @@ interface HistoryRecord {
 }
 
 const History = () => {
+  const { toast } = useToast();
   const [history, setHistory] = React.useState<HistoryRecord[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    try {
-      const records = db_ops.getCloneHistory();
-      setHistory(records);
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    const fetchHistory = async () => {
+      try {
+        const records = db_ops.getCloneHistory();
+        setHistory(Array.isArray(records) ? records : []);
+      } catch (error) {
+        console.error('Failed to fetch history:', error);
+        toast({
+          title: "Error loading history",
+          description: "Could not retrieve clone history records",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchHistory();
+  }, [toast]);
 
   if (isLoading) {
     return <div className="p-8">Loading history...</div>;
@@ -76,26 +88,34 @@ const History = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {history?.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>
-                      {format(new Date(record.created_at), 'MMM d, yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell className="break-words">
-                      <div className="max-h-[100px] overflow-y-auto">
-                        {record.query || 'N/A'}
-                      </div>
-                    </TableCell>
-                    <TableCell>{record.target_project_id}</TableCell>
-                    <TableCell className="text-center">{record.total_issues}</TableCell>
-                    <TableCell className="text-center text-jira-green">
-                      {record.successful_issues}
-                    </TableCell>
-                    <TableCell className="text-center text-jira-red">
-                      {record.failed_issues}
+                {history?.length > 0 ? (
+                  history.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        {format(new Date(record.created_at), 'MMM d, yyyy HH:mm')}
+                      </TableCell>
+                      <TableCell className="break-words">
+                        <div className="max-h-[100px] overflow-y-auto">
+                          {record.query || 'N/A'}
+                        </div>
+                      </TableCell>
+                      <TableCell>{record.target_project_id}</TableCell>
+                      <TableCell className="text-center">{record.total_issues}</TableCell>
+                      <TableCell className="text-center text-green-600">
+                        {record.successful_issues}
+                      </TableCell>
+                      <TableCell className="text-center text-red-600">
+                        {record.failed_issues}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      No history records found
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </ScrollArea>
