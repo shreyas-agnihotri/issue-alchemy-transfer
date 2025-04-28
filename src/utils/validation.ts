@@ -9,6 +9,25 @@ export const jqlSchema = z.string().min(1).refine((val) => {
   return hasValidSyntax;
 }, "Invalid JQL syntax");
 
+// Validate JQL function
+export const validateJql = (jql: string) => {
+  const result = jqlSchema.safeParse(jql);
+  return {
+    isValid: result.success,
+    message: result.success ? "" : "Invalid JQL syntax. Please check your query."
+  };
+};
+
+// Jira URL validation
+export const validateJiraUrl = (url: string) => {
+  // Basic URL validation for Jira
+  const isValid = url === "" || /https?:\/\/.*?\.atlassian\.net\/browse\/[A-Z]+-\d+/.test(url);
+  return {
+    isValid,
+    message: isValid ? "" : "Invalid Jira URL. Expected format: https://your-domain.atlassian.net/browse/PROJECT-123"
+  };
+};
+
 // Clone operation validation
 export const cloneOperationSchema = z.object({
   sourceProjectId: z.string().min(1),
@@ -88,4 +107,3 @@ export const validateOAuthToken = (token: unknown) => {
   }
   return result.data;
 };
-
