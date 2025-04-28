@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/components/ui/use-toast';
 import { db_ops } from '@/services/database';
 import { jiraClient } from '@/services/jira-api/jira-client';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 export interface JiraApiKeyFormData {
   jira_url: string;
@@ -21,6 +24,7 @@ export function ApiKeyForm() {
   const form = useForm<JiraApiKeyFormData>();
   const [isValidating, setIsValidating] = useState(false);
   const [isAuthVerified, setIsAuthVerified] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -44,6 +48,8 @@ export function ApiKeyForm() {
 
   const validateCredentials = async (data: JiraApiKeyFormData) => {
     setIsValidating(true);
+    setAuthError(null);
+    
     try {
       const isValid = await jiraClient.testConnection({
         baseUrl: data.jira_url,
@@ -59,6 +65,7 @@ export function ApiKeyForm() {
           title: "Credentials valid",
           description: "Successfully connected to JIRA"
         });
+        setIsAuthVerified(true);
         return true;
       } else {
         toast({
@@ -66,14 +73,27 @@ export function ApiKeyForm() {
           description: "Could not connect to JIRA with provided credentials",
           variant: "destructive"
         });
+        setIsAuthVerified(false);
         return false;
       }
     } catch (error: any) {
+      let errorMessage = "Could not validate JIRA credentials";
+      
+      if (error.status === 401) {
+        errorMessage = "Authentication failed. Please check your API key and email.";
+      } else if (error.status === 0) {
+        errorMessage = "Network error. Please check your JIRA URL and network connection.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setAuthError(errorMessage);
       toast({
         title: "Connection failed",
-        description: error.message || "Could not validate JIRA credentials",
+        description: errorMessage,
         variant: "destructive"
       });
+      setIsAuthVerified(false);
       return false;
     } finally {
       setIsValidating(false);
@@ -82,28 +102,53 @@ export function ApiKeyForm() {
 
   const handleTestConnection = async () => {
     setIsValidating(true);
+    setAuthError(null);
+    
+    const formData = form.getValues();
+    
+    // Basic validation
+    if (!formData.jira_url || !formData.api_key || !formData.user_email) {
+      setAuthError("Please fill in all required fields (JIRA URL, API Key, and User Email)");
+      setIsValidating(false);
+      return;
+    }
+    
     try {
+      // Set the configuration before testing
+      jiraClient.setConfig({
+        baseUrl: formData.jira_url,
+        auth: {
+          type: 'api-key',
+          apiKey: formData.api_key,
+          email: formData.user_email
+        }
+      });
+      
       const isValid = await jiraClient.validateCredentials();
       
-      if (isValid) {
-        setIsAuthVerified(true);
-        toast({
-          title: "Connection successful",
-          description: "Successfully connected to JIRA"
-        });
-      } else {
-        setIsAuthVerified(false);
-        toast({
-          title: "Connection failed",
-          description: "Could not connect to JIRA with current credentials",
-          variant: "destructive"
-        });
-      }
+      setIsAuthVerified(true);
+      toast({
+        title: "Connection successful",
+        description: "Successfully connected to JIRA"
+      });
     } catch (error: any) {
       setIsAuthVerified(false);
+      
+      let errorMessage = "Failed to connect to JIRA";
+      
+      if (error.status === 401) {
+        errorMessage = "Authentication failed. Please check your API key and email.";
+      } else if (error.status === 0) {
+        errorMessage = "Network error. Please check your JIRA URL and network connection.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setAuthError(errorMessage);
+      
       toast({
         title: "Connection error",
-        description: error.message || "Failed to connect to JIRA",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -112,6 +157,9 @@ export function ApiKeyForm() {
   };
 
   const onSubmit = async (data: JiraApiKeyFormData) => {
+    // Clean the URL by removing trailing slashes
+    data.jira_url = data.jira_url.trim().replace(/\/+$/, '');
+    
     const isValid = await validateCredentials(data);
     if (!isValid) return;
 
@@ -152,14 +200,25 @@ export function ApiKeyForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
+        
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="jira_url">JIRA URL</Label>
             <Input 
               id="jira_url"
               placeholder="https://your-domain.atlassian.net" 
-              {...form.register('jira_url')} 
+              {...form.register('jira_url', { required: true })} 
             />
+            <p className="text-sm text-muted-foreground">
+              Example: https://your-domain.atlassian.net (no trailing slash)
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="api_key">API Key</Label>
@@ -167,7 +226,7 @@ export function ApiKeyForm() {
               id="api_key"
               type="password" 
               placeholder="Your JIRA API Key" 
-              {...form.register('api_key')} 
+              {...form.register('api_key', { required: true })} 
             />
           </div>
           <div className="space-y-2">
@@ -176,7 +235,7 @@ export function ApiKeyForm() {
               id="user_email"
               type="email" 
               placeholder="your-email@example.com" 
-              {...form.register('user_email')} 
+              {...form.register('user_email', { required: true })} 
             />
           </div>
           <div className="space-y-2">

@@ -56,6 +56,16 @@ class JiraClient {
         if (!response.ok) {
           console.error('Electron request failed:', response.status, response.statusText);
           console.error('Response data:', response.data);
+          
+          // Handle specific error cases
+          if (response.status === 401) {
+            throw {
+              status: 401,
+              message: 'Authentication failed. Please check your API key and email.',
+              error: response.data
+            };
+          }
+          
           const error: JiraError = {
             status: response.status,
             message: response.statusText || 'Request failed',
@@ -71,27 +81,48 @@ class JiraClient {
       }
     }
     
-    const response = await fetch(url, {
-      ...options,
-      headers: this.getHeaders(),
-    });
-
-    if (!response.ok) {
-      const error: JiraError = {
-        status: response.status,
-        message: response.statusText,
-      };
-      
-      try {
-        error.error = await response.json();
-      } catch {
-        error.error = await response.text();
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: this.getHeaders(),
+      });
+  
+      if (!response.ok) {
+        const error: JiraError = {
+          status: response.status,
+          message: response.statusText,
+        };
+        
+        // Handle 401 errors specifically
+        if (response.status === 401) {
+          error.message = 'Authentication failed. Please check your API key and email.';
+        }
+        
+        try {
+          error.error = await response.json();
+        } catch {
+          try {
+            error.error = await response.text();
+          } catch (e) {
+            error.error = 'Failed to parse error response';
+          }
+        }
+        
+        throw error;
       }
-      
+  
+      return response.json();
+    } catch (error: any) {
+      if (!error.status) {
+        // Network or CORS errors
+        error = {
+          status: 0,
+          message: error.message || 'Network error',
+          error: error
+        };
+      }
       throw error;
     }
-
-    return response.json();
   }
 
   async searchIssues(jql: string): Promise<JiraSearchResponse> {
@@ -199,9 +230,11 @@ class JiraClient {
     try {
       await this.request('myself');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Validation error:', error);
-      return false;
+      
+      // Rethrow the error to be handled by the caller
+      throw error;
     }
   }
 
@@ -210,9 +243,10 @@ class JiraClient {
     this.config = config;
 
     try {
-      const isValid = await this.validateCredentials();
+      // Use a more specific endpoint that's less likely to have permission issues
+      await this.request('myself');
       this.config = previousConfig;
-      return isValid;
+      return true;
     } catch (error) {
       this.config = previousConfig;
       throw error;
