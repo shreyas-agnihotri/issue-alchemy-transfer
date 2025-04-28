@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import History from "./pages/History";
 
+// Create QueryClient outside of component to avoid recreation on re-renders
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -19,24 +20,24 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Use HashRouter for better compatibility across environments
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <ErrorBoundary>
-          <HashRouter>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <HashRouter>
+          {/* Move TooltipProvider inside the component hierarchy */}
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/history" element={<History />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </HashRouter>
-        </ErrorBoundary>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </TooltipProvider>
+        </HashRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

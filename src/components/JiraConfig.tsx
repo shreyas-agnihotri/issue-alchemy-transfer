@@ -33,8 +33,24 @@ const JiraConfig = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const apiKeyForm = useForm<JiraApiKeyFormData>();
-  const oauthForm = useForm<JiraOAuthFormData>();
+  // Create separate form instances
+  const apiKeyForm = useForm<JiraApiKeyFormData>({
+    defaultValues: {
+      jira_url: '',
+      api_key: '',
+      user_email: '',
+      jql_filter: ''
+    }
+  });
+  
+  const oauthForm = useForm<JiraOAuthFormData>({
+    defaultValues: {
+      jira_url: '',
+      oauth_client_id: '',
+      oauth_client_secret: '',
+      jql_filter: ''
+    }
+  });
 
   const onApiKeySubmit = async (data: JiraApiKeyFormData) => {
     try {
@@ -121,6 +137,7 @@ const JiraConfig = () => {
     // require('electron').shell.openExternal(authUrl);
   };
 
+  // Render each form with explicit Form context provided by Form component
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -148,6 +165,7 @@ const JiraConfig = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Explicit Form context for API key form */}
                 <Form {...apiKeyForm}>
                   <form onSubmit={apiKeyForm.handleSubmit(onApiKeySubmit)} className="space-y-4">
                     <FormField
@@ -228,6 +246,7 @@ const JiraConfig = () => {
                   </AlertDescription>
                 </Alert>
                 
+                {/* Explicit Form context for OAuth form */}
                 <Form {...oauthForm}>
                   <form onSubmit={oauthForm.handleSubmit(onOAuthSubmit)} className="space-y-4">
                     <FormField
