@@ -17,7 +17,19 @@ if (!rootElement) {
 }
 
 // Add Electron-specific code here if needed
-const isElectron = window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+const isElectron = typeof window !== 'undefined' && 
+  window.navigator && 
+  window.navigator.userAgent.toLowerCase().indexOf('electron') > -1;
+
 if (isElectron) {
-  console.log('Running in Electron');
+  console.log('Running in Electron environment');
+  
+  // Set up any Electron-specific listeners or configurations
+  try {
+    window.addEventListener('error', (event) => {
+      console.error('Uncaught error:', event.error);
+    });
+  } catch (e) {
+    console.warn('Unable to set up Electron-specific error handling', e);
+  }
 }
