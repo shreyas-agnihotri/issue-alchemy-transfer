@@ -34,7 +34,7 @@ npm run electron:build
 
 If you encounter issues during installation:
 
-1. Make sure you're using a compatible Node.js version (14.x or later recommended)
+1. Make sure you're using a compatible Node.js version (18.x or later recommended)
 2. If better-sqlite3 fails to install, you may need to install build tools:
    - On Windows: `npm install --global --production windows-build-tools`
    - On macOS: `xcode-select --install`
@@ -51,3 +51,4 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+
