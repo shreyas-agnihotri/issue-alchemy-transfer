@@ -8,6 +8,12 @@ export class BaseJiraClient {
 
   setConfig(config: JiraConfig | null) {
     this.config = config;
+    console.log('Jira configuration updated:', {
+      baseUrl: config?.baseUrl,
+      authType: config?.auth.type,
+      hasEmail: !!config?.auth.email,
+      hasApiKey: !!config?.auth.apiKey
+    });
   }
 
   protected getHeaders() {
@@ -19,17 +25,21 @@ export class BaseJiraClient {
       throw new Error('Email and API key are required for authentication');
     }
 
-    // Create the credentials string in the format "email:apiKey"
     const credentials = `${this.config.auth.email}:${this.config.auth.apiKey}`;
-    
-    // Properly encode to base64 - encode UTF-8 string to base64
     const base64Auth = btoa(unescape(encodeURIComponent(credentials)));
     
-    return {
+    const headers = {
       'Authorization': `Basic ${base64Auth}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
+
+    console.debug('Request headers generated:', {
+      ...headers,
+      Authorization: '***REDACTED***'
+    });
+
+    return headers;
   }
 
   protected async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -38,6 +48,7 @@ export class BaseJiraClient {
     }
 
     const url = `${this.config.baseUrl}/rest/api/3/${endpoint}`;
+    console.log(`Making ${options.method || 'GET'} request to: ${url}`);
     
     if (this.isElectron && window.electron) {
       return this.makeElectronRequest<T>(url, options);
@@ -48,17 +59,16 @@ export class BaseJiraClient {
 
   private async makeElectronRequest<T>(url: string, options: RequestInit): Promise<T> {
     try {
-      console.log('Using Electron IPC for request:', url);
-      const headers = this.getHeaders();
+      console.group(`Electron API Request: ${options.method || 'GET'} ${url}`);
+      console.time('Request Duration');
       
+      const headers = this.getHeaders();
       const requestOptions = { ...options };
       
       if (requestOptions.body && typeof requestOptions.body === 'object') {
         requestOptions.body = JSON.stringify(requestOptions.body);
+        console.debug('Request payload:', JSON.parse(requestOptions.body));
       }
-      
-      console.debug('Request headers:', headers);
-      console.debug('Request body:', requestOptions.body);
       
       const response = await window.electron.makeRequest({
         url,
@@ -68,34 +78,66 @@ export class BaseJiraClient {
         }
       });
       
-      console.debug('Response received:', response);
+      console.debug('Response status:', response.ok ? 'OK' : 'Failed', response.status);
       
       if (!response.ok) {
+        console.error('Request failed:', response);
         this.handleErrorResponse(response);
       }
       
+      console.timeEnd('Request Duration');
+      console.groupEnd();
+      
       return response.data;
     } catch (error: any) {
-      console.error('Electron request error:', error);
+      console.error('Electron request failed:', {
+        error: error.message,
+        stack: error.stack,
+        status: error.status
+      });
       throw error;
     }
   }
 
   private async makeBrowserRequest<T>(url: string, options: RequestInit): Promise<T> {
     try {
+      console.group(`Browser API Request: ${options.method || 'GET'} ${url}`);
+      console.time('Request Duration');
+
+      if (options.body) {
+        console.debug('Request payload:', 
+          typeof options.body === 'string' ? JSON.parse(options.body) : options.body
+        );
+      }
+
       const response = await fetch(url, {
         ...options,
         headers: this.getHeaders(),
       });
   
+      console.debug('Response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        console.error('Request failed:', {
+          status: response.status,
+          statusText: response.statusText
+        });
         await this.handleErrorResponse(response);
       }
   
-      return response.json();
+      const data = await response.json();
+      console.debug('Response data:', data);
+      console.timeEnd('Request Duration');
+      console.groupEnd();
+      return data;
     } catch (error: any) {
+      console.error('Browser request failed:', {
+        message: error.message,
+        stack: error.stack,
+        status: error.status || 0
+      });
+
       if (!error.status) {
-        // Network or CORS errors
         error = {
           status: 0,
           message: error.message || 'Network error',
@@ -118,14 +160,18 @@ export class BaseJiraClient {
     
     try {
       error.error = 'data' in response ? response.data : await response.json();
-    } catch {
+      console.error('Error response data:', error.error);
+    } catch (e) {
       try {
         error.error = 'data' in response ? response.data : await response.text();
+        console.error('Error response text:', error.error);
       } catch (e) {
         error.error = 'Failed to parse error response';
+        console.error('Failed to parse error response');
       }
     }
     
     throw error;
   }
 }
+
