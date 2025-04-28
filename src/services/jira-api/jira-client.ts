@@ -1,9 +1,9 @@
-
 import { JiraConfig, JiraSearchResponse, JiraError } from './types';
 
 class JiraClient {
   private config: JiraConfig | null = null;
-  private isElectron = !!window.electron;
+  private isElectron = typeof window !== 'undefined' && 
+    'electron' in window && window.electron !== undefined;
 
   setConfig(config: JiraConfig | null) {
     this.config = config;
@@ -36,7 +36,7 @@ class JiraClient {
     const url = `${this.config.baseUrl}/rest/api/3/${endpoint}`;
     
     // Use Electron's IPC for requests when in Electron environment to bypass CORS
-    if (this.isElectron) {
+    if (this.isElectron && window.electron) {
       try {
         const response = await window.electron.makeRequest({
           url,
