@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { History as HistoryIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import ProjectSelector from '@/components/ProjectSelector';
 import IssueSelector from '@/components/IssueSelector';
 import CloneStatus from '@/components/CloneStatus';
@@ -34,6 +36,15 @@ const Index = () => {
 
   return (
     <ClonePageLayout>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" asChild>
+          <Link to="/history" className="flex items-center gap-2">
+            <HistoryIcon className="h-4 w-4" />
+            View History
+          </Link>
+        </Button>
+      </div>
+
       <JqlInput 
         jql={jql}
         onJqlChange={setJql}
