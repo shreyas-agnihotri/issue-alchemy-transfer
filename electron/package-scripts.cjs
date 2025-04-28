@@ -23,7 +23,7 @@ try {
   // Add electron scripts if they don't exist
   packageJson.scripts = {
     ...packageJson.scripts,
-    "electron": packageJson.scripts.electron || "node electron/electron-dev.js",
+    "electron": packageJson.scripts.electron || "node electron/electron-dev.cjs",
     "electron:build": packageJson.scripts["electron:build"] || "vite build && electron-builder -c electron/electron-builder.js",
     "electron:pack": packageJson.scripts["electron:pack"] || "vite build && electron ."
   };
