@@ -18,7 +18,7 @@ cd [repository-folder]
 npm install
 
 # Step 3: Setup Electron (this will update package.json)
-node setup-electron.js
+node setup-electron.cjs
 
 # Step 4: Start the development server
 npm run dev
