@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { JiraIssue } from "@/types/jira";
 
@@ -20,8 +19,11 @@ export const validateJql = (jql: string) => {
 
 // Jira URL validation
 export const validateJiraUrl = (url: string) => {
-  // Basic URL validation for Jira
-  const isValid = url === "" || /https?:\/\/.*?\.atlassian\.net\/browse\/[A-Z]+-\d+/.test(url);
+  if (url === "") return { isValid: true, message: "" };
+  
+  // Enhanced URL validation for Jira - accept both atlassian.net and other company domains
+  const isValid = /https?:\/\/.*?\.(?:atlassian\.net|[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)\/(?:browse|issues)\/[A-Z]+-\d+/.test(url);
+  
   return {
     isValid,
     message: isValid ? "" : "Invalid Jira URL. Expected format: https://your-domain.atlassian.net/browse/PROJECT-123"

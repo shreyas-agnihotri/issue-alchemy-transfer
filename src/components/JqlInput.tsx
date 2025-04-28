@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, Link2 } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { validateJiraUrl, validateJql } from '@/utils/validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -33,10 +33,10 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
     setIssueUrl(url);
     
     const urlValidation = validateJiraUrl(url);
-    setUrlError(urlValidation.message);
+    setUrlError(urlValidation.isValid ? undefined : urlValidation.message);
     
     if (urlValidation.isValid && url) {
-      const issueKeyMatch = url.match(/\/browse\/([A-Z]+-\d+)/);
+      const issueKeyMatch = url.match(/\/(?:browse|issues)\/([A-Z]+-\d+)/);
       if (issueKeyMatch) {
         const issueKey = issueKeyMatch[1];
         onJqlChange(`key = ${issueKey}`);
@@ -48,7 +48,7 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
   const handleJqlChange = (value: string) => {
     onJqlChange(value);
     const jqlValidation = validateJql(value);
-    setJqlError(jqlValidation.message);
+    setJqlError(jqlValidation.isValid ? undefined : jqlValidation.message);
   };
 
   const handleSearch = () => {
