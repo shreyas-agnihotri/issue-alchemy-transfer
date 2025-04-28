@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { History as HistoryIcon } from 'lucide-react';
@@ -9,6 +8,7 @@ import CloneStatus from '@/components/CloneStatus';
 import CloneConfirmation from '@/components/CloneConfirmation';
 import ClonePageLayout from '@/components/ClonePageLayout';
 import JqlInput from '@/components/JqlInput';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
 import { mockProjects } from '@/lib/mock-data';
 
@@ -35,59 +35,61 @@ const Index = () => {
   } = useCloneIssues();
 
   return (
-    <ClonePageLayout>
-      <div className="flex justify-end mb-4">
-        <Button variant="outline" asChild>
-          <Link to="/history" className="flex items-center gap-2">
-            <HistoryIcon className="h-4 w-4" />
-            View History
-          </Link>
-        </Button>
-      </div>
+    <ErrorBoundary>
+      <ClonePageLayout>
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" asChild>
+            <Link to="/history" className="flex items-center gap-2">
+              <HistoryIcon className="h-4 w-4" />
+              View History
+            </Link>
+          </Button>
+        </div>
 
-      <JqlInput 
-        jql={jql}
-        onJqlChange={setJql}
-        onSearch={handleSearch}
-        isLoading={isLoading}
-      />
-      
-      <ProjectSelector
-        projects={mockProjects}
-        selectedTargetProject={targetProjectId}
-        onTargetProjectChange={setTargetProjectId}
-        isLoading={isLoading}
-      />
-      
-      <IssueSelector
-        issues={issues}
-        selectedIssues={selectedIssueIds}
-        onIssueSelect={handleIssueSelect}
-        isLoading={isLoading}
-      />
-      
-      <CloneStatus results={cloneResults} isCloning={isCloning} />
-      
-      <div className="flex justify-end">
-        <Button
-          className="bg-jira-blue hover:bg-jira-blue-dark"
-          size="lg"
-          disabled={isLoading || isCloning || selectedIssueIds.length === 0 || !targetProjectId}
-          onClick={handleCloneClick}
-        >
-          Clone Selected Issues
-        </Button>
-      </div>
+        <JqlInput 
+          jql={jql}
+          onJqlChange={setJql}
+          onSearch={handleSearch}
+          isLoading={isLoading}
+        />
+        
+        <ProjectSelector
+          projects={mockProjects}
+          selectedTargetProject={targetProjectId}
+          onTargetProjectChange={setTargetProjectId}
+          isLoading={isLoading}
+        />
+        
+        <IssueSelector
+          issues={issues}
+          selectedIssues={selectedIssueIds}
+          onIssueSelect={handleIssueSelect}
+          isLoading={isLoading}
+        />
+        
+        <CloneStatus results={cloneResults} isCloning={isCloning} />
+        
+        <div className="flex justify-end">
+          <Button
+            className="bg-jira-blue hover:bg-jira-blue-dark"
+            size="lg"
+            disabled={isLoading || isCloning || selectedIssueIds.length === 0 || !targetProjectId}
+            onClick={handleCloneClick}
+          >
+            Clone Selected Issues
+          </Button>
+        </div>
 
-      <CloneConfirmation
-        isOpen={showConfirmation}
-        onClose={() => setShowConfirmation(false)}
-        onConfirm={handleConfirmClone}
-        selectedIssues={selectedIssues}
-        sourceProject={sourceProject}
-        targetProject={targetProject}
-      />
-    </ClonePageLayout>
+        <CloneConfirmation
+          isOpen={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleConfirmClone}
+          selectedIssues={selectedIssues}
+          sourceProject={sourceProject}
+          targetProject={targetProject}
+        />
+      </ClonePageLayout>
+    </ErrorBoundary>
   );
 };
 

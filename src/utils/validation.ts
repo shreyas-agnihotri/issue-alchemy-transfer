@@ -1,41 +1,91 @@
 
-export const validateJiraUrl = (url: string): { isValid: boolean; message?: string } => {
-  if (!url) return { isValid: true }; // Empty is OK as it's optional
-  
-  try {
-    const urlObj = new URL(url);
-    const isJiraUrl = urlObj.pathname.includes('/browse/');
-    const hasIssueKey = /\/browse\/[A-Z]+-\d+/.test(urlObj.pathname);
-    
-    if (!isJiraUrl || !hasIssueKey) {
-      return {
-        isValid: false,
-        message: "Invalid Jira issue URL format. Expected format: https://your-domain.atlassian.net/browse/PROJECT-123"
-      };
-    }
-    
-    return { isValid: true };
-  } catch (e) {
-    return {
-      isValid: false,
-      message: "Invalid URL format"
-    };
+import { z } from "zod";
+import { JiraIssue } from "@/types/jira";
+
+// JQL validation schema
+export const jqlSchema = z.string().min(1).refine((val) => {
+  // Basic JQL syntax validation
+  const hasValidSyntax = /^[^=]*=[^=]*$|^[^~]*~[^~]*$/.test(val);
+  return hasValidSyntax;
+}, "Invalid JQL syntax");
+
+// Clone operation validation
+export const cloneOperationSchema = z.object({
+  sourceProjectId: z.string().min(1),
+  targetProjectId: z.string().min(1),
+  issues: z.array(z.string()).min(1).max(100),
+  options: z.object({
+    includeSubtasks: z.boolean(),
+    maintainLinks: z.boolean(),
+    keepRelationships: z.boolean(),
+    retryFailed: z.boolean(),
+  }),
+});
+
+export type CloneOperationValidated = z.infer<typeof cloneOperationSchema>;
+
+// Results validation
+export const cloneResultSchema = z.object({
+  success: z.boolean(),
+  sourceIssueId: z.string(),
+  targetIssueId: z.string().optional(),
+  error: z.string().optional(),
+  retryCount: z.number().default(0),
+});
+
+export type CloneResultValidated = z.infer<typeof cloneResultSchema>;
+
+// OAuth token validation
+export const oauthTokenSchema = z.object({
+  accessToken: z.string(),
+  refreshToken: z.string().optional(),
+  expiresAt: z.number(),
+  tokenType: z.string(),
+});
+
+// Error types
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ValidationError";
   }
+}
+
+export class CloneOperationError extends Error {
+  constructor(
+    message: string,
+    public readonly sourceIssueId: string,
+    public readonly retryable: boolean = true
+  ) {
+    super(message);
+    this.name = "CloneOperationError";
+  }
+}
+
+// Validators
+export const validateJiraIssue = (issue: JiraIssue): boolean => {
+  return Boolean(
+    issue &&
+    issue.id &&
+    issue.key &&
+    issue.project &&
+    typeof issue.summary === 'string'
+  );
 };
 
-export const validateJql = (jql: string): { isValid: boolean; message?: string } => {
-  if (!jql) return { isValid: true }; // Empty is OK as it's optional
-  
-  // Basic JQL syntax validation
-  const containsValidOperators = /=|!=|>|<|IN|NOT IN|~|!~/i.test(jql);
-  const hasValidStructure = /^[\w\s]+\s*[=!<>~]+/.test(jql.trim());
-  
-  if (!containsValidOperators || !hasValidStructure) {
-    return {
-      isValid: false,
-      message: "Invalid JQL syntax. Example: project = 'DEMO' AND status != Closed"
-    };
+export const validateCloneOperation = (data: unknown): CloneOperationValidated => {
+  const result = cloneOperationSchema.safeParse(data);
+  if (!result.success) {
+    throw new ValidationError(result.error.message);
   }
-  
-  return { isValid: true };
+  return result.data;
 };
+
+export const validateOAuthToken = (token: unknown) => {
+  const result = oauthTokenSchema.safeParse(token);
+  if (!result.success) {
+    throw new ValidationError(result.error.message);
+  }
+  return result.data;
+};
+
