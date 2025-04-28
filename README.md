@@ -38,8 +38,12 @@ If you're on macOS and encounter issues installing native dependencies (particul
 # Install Xcode Command Line Tools
 xcode-select --install
 
-# Install SQLite3 via Homebrew
+# Install required packages via Homebrew
+brew install pkg-config
 brew install sqlite3
+
+# Optional: Install Python if needed
+brew install python
 
 # Install node-gyp globally (helps with native module compilation)
 npm install -g node-gyp
