@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,7 +23,7 @@ interface HistoryRecord {
   successful_issues: number;
   failed_issues: number;
   created_at: string;
-  query: string;
+  query?: string;
 }
 
 const History = () => {
@@ -100,4 +99,3 @@ const History = () => {
 };
 
 export default History;
-

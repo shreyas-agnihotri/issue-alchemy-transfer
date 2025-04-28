@@ -14,6 +14,7 @@ export type Database = {
           created_at: string
           failed_issues: number
           id: string
+          query: string | null
           source_project_id: string
           successful_issues: number
           target_project_id: string
@@ -24,6 +25,7 @@ export type Database = {
           created_at?: string
           failed_issues: number
           id?: string
+          query?: string | null
           source_project_id: string
           successful_issues: number
           target_project_id: string
@@ -34,6 +36,7 @@ export type Database = {
           created_at?: string
           failed_issues?: number
           id?: string
+          query?: string | null
           source_project_id?: string
           successful_issues?: number
           target_project_id?: string
