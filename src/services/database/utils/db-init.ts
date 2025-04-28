@@ -39,23 +39,11 @@ export const initializeDatabase = (db: Database) => {
       id TEXT PRIMARY KEY,
       jira_url TEXT NOT NULL,
       api_key TEXT,
-      oauth_client_id TEXT,
-      oauth_client_secret TEXT,
       auth_method TEXT NOT NULL DEFAULT 'api-key',
       user_email TEXT,
       jql_filter TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-    
-    CREATE TABLE IF NOT EXISTS oauth_tokens (
-      id TEXT PRIMARY KEY,
-      access_token TEXT NOT NULL,
-      refresh_token TEXT,
-      token_type TEXT NOT NULL,
-      expires_at INTEGER NOT NULL,
-      scope TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   `);
 };

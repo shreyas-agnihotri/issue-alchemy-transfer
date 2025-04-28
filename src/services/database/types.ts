@@ -1,4 +1,3 @@
-
 export interface CloneHistoryRecord {
   id: string;
   source_project_id: string;
@@ -14,20 +13,9 @@ export interface JiraConfigRecord {
   id?: string;
   jira_url: string;
   api_key?: string;
-  oauth_client_id?: string;
-  oauth_client_secret?: string;
-  auth_method: 'api-key' | 'oauth';
+  auth_method: 'api-key';
   user_email?: string;
   jql_filter?: string;
-}
-
-export interface OAuthTokenRecord {
-  id?: string;
-  access_token: string;
-  refresh_token?: string;
-  token_type: string;
-  expires_at: number;
-  scope?: string;
 }
 
 export interface DatabaseOperations {
@@ -39,6 +27,4 @@ export interface DatabaseOperations {
   saveJiraConfig: (config: JiraConfigRecord) => Promise<JiraConfigRecord>;
   getJiraConfig: () => Promise<JiraConfigRecord | null>;
   resetJiraConfig: () => Promise<void>;
-  saveOAuthToken: (token: OAuthTokenRecord) => Promise<OAuthTokenRecord>;
-  getOAuthToken: () => Promise<OAuthTokenRecord | null>;
 }

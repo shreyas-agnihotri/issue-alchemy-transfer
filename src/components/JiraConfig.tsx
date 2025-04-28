@@ -1,29 +1,21 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Settings, RotateCcw } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiKeyForm } from './jira-config/ApiKeyForm';
-import { OAuthForm } from './jira-config/OAuthForm';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { db_ops } from '@/services/database';
 import { jiraClient } from '@/services/jira-api/jira-client';
 
 const JiraConfig = () => {
-  const [activeAuthMethod, setActiveAuthMethod] = useState<'api-key' | 'oauth'>('api-key');
   const { toast } = useToast();
 
   const handleReset = async () => {
     try {
-      // Reset Jira configuration
       await db_ops.resetJiraConfig();
-      
-      // Reset clone history
       await db_ops.resetCloneHistory();
-      
-      // Reset Jira client configuration
       jiraClient.setConfig(null);
 
       toast({
@@ -51,20 +43,9 @@ const JiraConfig = () => {
           <SheetTitle>JIRA Configuration</SheetTitle>
         </SheetHeader>
         
-        <Tabs value={activeAuthMethod} onValueChange={(value) => setActiveAuthMethod(value as 'api-key' | 'oauth')} className="mt-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="api-key">API Key</TabsTrigger>
-            <TabsTrigger value="oauth">OAuth 2.0 (Recommended)</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="api-key">
-            <ApiKeyForm />
-          </TabsContent>
-          
-          <TabsContent value="oauth">
-            <OAuthForm />
-          </TabsContent>
-        </Tabs>
+        <div className="mt-4">
+          <ApiKeyForm />
+        </div>
 
         <SheetFooter className="mt-6">
           <AlertDialog>

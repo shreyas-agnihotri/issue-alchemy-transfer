@@ -14,19 +14,12 @@ class JiraClient {
       throw new Error('Jira configuration not set');
     }
 
-    const headers: Record<string, string> = {
+    const base64Auth = btoa(`${this.config.auth.email}:${this.config.auth.apiKey}`);
+    return {
+      'Authorization': `Basic ${base64Auth}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
-
-    if (this.config.auth.type === 'api-key') {
-      const base64Auth = btoa(`${this.config.auth.email}:${this.config.auth.apiKey}`);
-      headers['Authorization'] = `Basic ${base64Auth}`;
-    } else {
-      headers['Authorization'] = `Bearer ${this.config.auth.token}`;
-    }
-
-    return headers;
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -36,21 +29,17 @@ class JiraClient {
 
     const url = `${this.config.baseUrl}/rest/api/3/${endpoint}`;
     
-    // Use Electron's IPC for requests when in Electron environment to bypass CORS
     if (this.isElectron && window.electron) {
       try {
         console.log('Using Electron IPC for request:', url);
         const headers = this.getHeaders();
         
-        // Clone options to avoid mutating the original object
         const requestOptions = { ...options };
         
-        // Ensure the body is stringified if it's an object
         if (requestOptions.body && typeof requestOptions.body === 'object') {
           requestOptions.body = JSON.stringify(requestOptions.body);
         }
         
-        // Debug the exact request being sent
         console.debug('Request headers:', headers);
         console.debug('Request body:', requestOptions.body);
         
@@ -82,7 +71,6 @@ class JiraClient {
       }
     }
     
-    // Browser fetch implementation
     const response = await fetch(url, {
       ...options,
       headers: this.getHeaders(),
@@ -97,7 +85,6 @@ class JiraClient {
       try {
         error.error = await response.json();
       } catch {
-        // If parsing json fails, use text
         error.error = await response.text();
       }
       
@@ -108,7 +95,6 @@ class JiraClient {
   }
 
   async searchIssues(jql: string): Promise<JiraSearchResponse> {
-    // Improved validation before making the request
     if (!jql || jql.trim() === '') {
       throw new Error('JQL query cannot be empty');
     }
@@ -116,7 +102,6 @@ class JiraClient {
     const sanitizedJql = this.sanitizeJql(jql);
     console.log('Searching with sanitized JQL:', sanitizedJql);
     
-    // Fix: Create a request body object and stringify it properly
     const requestBody = {
       jql: sanitizedJql,
       maxResults: 50,
@@ -142,11 +127,9 @@ class JiraClient {
         body: JSON.stringify(requestBody)
       });
     } catch (error: any) {
-      // Enhanced error handling for common Jira API issues
       if (error.status === 400 && error.error && error.error.errorMessages) {
         const errorMsg = error.error.errorMessages[0];
         if (errorMsg.includes('does not exist or you do not have permission')) {
-          // Re-throw with a more user-friendly message
           const issueKey = this.extractIssueKeyFromJql(sanitizedJql);
           error.message = `Issue ${issueKey ? `'${issueKey}'` : ''} does not exist or you do not have permission to access it.`;
         }
@@ -155,15 +138,12 @@ class JiraClient {
     }
   }
 
-  // Extract issue key from a JQL query if it's a simple key search
   private extractIssueKeyFromJql(jql: string): string | null {
-    // Match patterns like 'key = "ABC-123"' or 'key="ABC-123"'
     const keyMatch = jql.match(/key\s*=\s*["']?([A-Z]+-\d+)["']?/i);
     if (keyMatch && keyMatch[1]) {
       return keyMatch[1];
     }
     
-    // Match simple issue key pattern
     const simpleKeyMatch = jql.match(/^["']?([A-Z]+-\d+)["']?$/);
     if (simpleKeyMatch && simpleKeyMatch[1]) {
       return simpleKeyMatch[1];
@@ -172,26 +152,20 @@ class JiraClient {
     return null;
   }
 
-  // Helper method to sanitize and normalize JQL
   private sanitizeJql(jql: string): string {
-    // Remove any leading/trailing whitespace
     let sanitized = jql.trim();
     
-    // If the JQL is just a simple issue key query (like "AV-98472"), format it properly
     if (/^[A-Z]+-\d+$/.test(sanitized)) {
       return `key = "${sanitized}"`;
     }
     
-    // If it's just a key = something without quotes, add quotes
     const keyMatch = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/i);
     if (keyMatch && keyMatch[1]) {
       return `key = "${keyMatch[1]}"`;
     }
     
-    // Check if the JQL already contains quotes around the issue key
     const keyWithQuotesMatch = sanitized.match(/key\s*=\s*["']([A-Z]+-\d+)["']/i);
     if (!keyWithQuotesMatch && sanitized.includes('key =')) {
-      // Add quotes around the issue key if it doesn't have them
       const keyValueMatch = sanitized.match(/key\s*=\s*([A-Z]+-\d+)/i);
       if (keyValueMatch && keyValueMatch[1]) {
         sanitized = sanitized.replace(keyValueMatch[0], `key = "${keyValueMatch[1]}"`);
@@ -202,15 +176,12 @@ class JiraClient {
   }
 
   async cloneIssue(issueKey: string, targetProjectKey: string): Promise<any> {
-    // First get the issue details
     const issue = await this.request<{fields: any}>(`issue/${issueKey}`);
     
-    // Prepare the new issue data
     const newIssueData = {
       fields: {
         ...issue.fields,
         project: { key: targetProjectKey },
-        // Reset some fields that shouldn't be copied
         assignee: null,
         reporter: null,
         created: undefined,
@@ -218,7 +189,6 @@ class JiraClient {
       }
     };
 
-    // Create the new issue
     return this.request('issue', {
       method: 'POST',
       body: JSON.stringify(newIssueData)
@@ -227,8 +197,6 @@ class JiraClient {
 
   async validateCredentials(): Promise<boolean> {
     try {
-      // Make a real API call to JIRA's /myself endpoint which is lightweight
-      // and available in all JIRA instances
       await this.request('myself');
       return true;
     } catch (error) {
@@ -238,17 +206,14 @@ class JiraClient {
   }
 
   async testConnection(config: JiraConfig): Promise<boolean> {
-    // Temporarily set the config for testing
     const previousConfig = this.config;
     this.config = config;
 
     try {
       const isValid = await this.validateCredentials();
-      // Restore previous config
       this.config = previousConfig;
       return isValid;
     } catch (error) {
-      // Restore previous config on error
       this.config = previousConfig;
       throw error;
     }
