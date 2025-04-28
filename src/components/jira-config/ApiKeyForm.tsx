@@ -40,8 +40,12 @@ export function ApiKeyForm() {
   const validateCredentials = async (data: JiraApiKeyFormData) => {
     setIsValidating(true);
     setAuthError(null);
+    setIsAuthVerified(false);
     
     try {
+      // Clean up URL and remove trailing slashes
+      data.jira_url = data.jira_url.trim().replace(/\/+$/, '');
+      
       const isValid = await jiraClient.testConnection({
         baseUrl: data.jira_url,
         auth: {
@@ -60,6 +64,7 @@ export function ApiKeyForm() {
         return true;
       }
       
+      // This should not be reached if testConnection throws on error
       toast({
         title: "Invalid credentials",
         description: "Could not connect to JIRA with provided credentials",
@@ -69,6 +74,7 @@ export function ApiKeyForm() {
       return false;
     } catch (error: any) {
       let errorMessage = error.message || "Could not validate JIRA credentials";
+      console.error("Credential validation error:", error);
       setAuthError(errorMessage);
       toast({
         title: "Connection failed",
@@ -85,7 +91,7 @@ export function ApiKeyForm() {
   const handleTestConnection = async () => {
     setIsValidating(true);
     setAuthError(null);
-    setIsAuthVerified(false); // Reset verification state when testing
+    setIsAuthVerified(false);
     
     const formData = form.getValues();
     
@@ -99,6 +105,12 @@ export function ApiKeyForm() {
       // Remove trailing slashes from the URL
       formData.jira_url = formData.jira_url.trim().replace(/\/+$/, '');
       
+      console.log("Testing connection with config:", {
+        baseUrl: formData.jira_url,
+        email: formData.user_email,
+        hasApiKey: !!formData.api_key
+      });
+      
       // Update the client configuration
       jiraClient.setConfig({
         baseUrl: formData.jira_url,
@@ -111,6 +123,7 @@ export function ApiKeyForm() {
       
       await jiraClient.validateCredentials();
       setIsAuthVerified(true);
+      setAuthError(null);
       toast({
         title: "Connection successful",
         description: "Successfully connected to JIRA"
@@ -118,6 +131,7 @@ export function ApiKeyForm() {
     } catch (error: any) {
       setIsAuthVerified(false);
       let errorMessage = error.message || "Failed to connect to JIRA";
+      console.error("Test connection error:", error);
       setAuthError(errorMessage);
       toast({
         title: "Connection error",

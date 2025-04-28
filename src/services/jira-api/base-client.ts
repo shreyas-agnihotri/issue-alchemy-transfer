@@ -82,7 +82,12 @@ export class BaseJiraClient {
       
       if (!response.ok) {
         console.error('Request failed:', response);
-        this.handleErrorResponse(response);
+        await this.handleErrorResponse(response);
+      }
+      
+      if (!response.data) {
+        console.warn('Empty response data received');
+        throw new Error('Empty response received from JIRA server');
       }
       
       console.timeEnd('Request Duration');
@@ -126,7 +131,20 @@ export class BaseJiraClient {
         await this.handleErrorResponse(response);
       }
   
-      const data = await response.json();
+      let data: any;
+      
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Failed to parse JSON response:', parseError);
+        throw new Error('Invalid JSON response from JIRA server');
+      }
+      
+      if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
+        console.warn('Empty data received in response');
+        throw new Error('Empty response received from JIRA server');
+      }
+      
       console.debug('Response data:', data);
       console.timeEnd('Request Duration');
       console.groupEnd();
@@ -150,7 +168,7 @@ export class BaseJiraClient {
     }
   }
 
-  private async handleErrorResponse(response: Response | { ok: boolean; status: number; statusText: string; data: any }) {
+  private async handleErrorResponse(response: Response | { ok: boolean; status: number; statusText: string; data?: any }) {
     const error: JiraError = {
       status: response.status,
       message: 'response' in response ? response.statusText : response.statusText,
@@ -158,6 +176,12 @@ export class BaseJiraClient {
     
     if (response.status === 401) {
       error.message = 'Authentication failed. Please check your API key and email.';
+    } else if (response.status === 403) {
+      error.message = 'Permission denied. Your account may not have sufficient privileges.';
+    } else if (response.status === 404) {
+      error.message = 'Resource not found. Please check your JIRA URL.';
+    } else if (response.status === 0) {
+      error.message = 'Network error. Please check your JIRA URL and network connection.';
     }
     
     try {
@@ -167,12 +191,22 @@ export class BaseJiraClient {
       try {
         error.error = 'data' in response ? response.data : await response.text();
         console.error('Error response text:', error.error);
+        
+        // Special handling for non-JSON responses which might indicate a wrong URL
+        if (typeof error.error === 'string' && (
+          error.error.includes('<html') || 
+          error.error.includes('<!DOCTYPE') ||
+          error.error.includes('Invalid json response')
+        )) {
+          error.message = 'Invalid response from JIRA server. Please check your JIRA URL format.';
+        }
       } catch (e) {
         error.error = 'Failed to parse error response';
         console.error('Failed to parse error response');
       }
     }
     
+    console.error('Throwing error:', error);
     throw error;
   }
 }
