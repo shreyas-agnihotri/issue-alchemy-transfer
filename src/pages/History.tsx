@@ -24,6 +24,7 @@ interface HistoryRecord {
   successful_issues: number;
   failed_issues: number;
   created_at: string;
+  query: string;
 }
 
 const History = () => {
@@ -66,7 +67,7 @@ const History = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Source Project</TableHead>
+                <TableHead>Query</TableHead>
                 <TableHead>Target Project</TableHead>
                 <TableHead>Total Issues</TableHead>
                 <TableHead>Success</TableHead>
@@ -79,7 +80,7 @@ const History = () => {
                   <TableCell>
                     {format(new Date(record.created_at), 'MMM d, yyyy HH:mm')}
                   </TableCell>
-                  <TableCell>{record.source_project_id}</TableCell>
+                  <TableCell>{record.query || 'N/A'}</TableCell>
                   <TableCell>{record.target_project_id}</TableCell>
                   <TableCell>{record.total_issues}</TableCell>
                   <TableCell className="text-jira-green">
