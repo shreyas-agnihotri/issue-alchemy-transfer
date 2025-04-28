@@ -19,8 +19,11 @@ export class BaseJiraClient {
       throw new Error('Email and API key are required for authentication');
     }
 
+    // Create the credentials string in the format "email:apiKey"
     const credentials = `${this.config.auth.email}:${this.config.auth.apiKey}`;
-    const base64Auth = btoa(credentials);
+    
+    // Properly encode to base64 - encode UTF-8 string to base64
+    const base64Auth = btoa(unescape(encodeURIComponent(credentials)));
     
     return {
       'Authorization': `Basic ${base64Auth}`,

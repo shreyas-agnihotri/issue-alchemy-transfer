@@ -9,6 +9,14 @@ export class JiraAuthOperations extends BaseJiraClient {
       return true;
     } catch (error: any) {
       console.error('Validation error:', error);
+      
+      // Handle specific authentication errors
+      if (error.status === 401) {
+        error.message = 'Authentication failed. Please check your API key and email.';
+      } else if (error.status === 0) {
+        error.message = 'Network error. Please check your JIRA URL and network connection.';
+      }
+      
       throw error;
     }
   }
