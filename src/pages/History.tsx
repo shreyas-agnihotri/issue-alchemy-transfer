@@ -26,7 +26,10 @@ const History = () => {
   React.useEffect(() => {
     const fetchHistory = async () => {
       try {
+        setIsLoading(true);
+        console.log('Fetching clone history...');
         const records = await db_ops.getCloneHistory();
+        console.log('Fetched records:', records);
         setHistory(Array.isArray(records) ? records : []);
       } catch (error) {
         console.error('Failed to fetch history:', error);
