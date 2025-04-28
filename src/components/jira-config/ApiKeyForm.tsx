@@ -20,6 +20,7 @@ export function ApiKeyForm() {
   const { toast } = useToast();
   const form = useForm<JiraApiKeyFormData>();
   const [isValidating, setIsValidating] = useState(false);
+  const [isAuthVerified, setIsAuthVerified] = useState(false);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -74,6 +75,37 @@ export function ApiKeyForm() {
         variant: "destructive"
       });
       return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsValidating(true);
+    try {
+      const isValid = await jiraClient.validateCredentials();
+      
+      if (isValid) {
+        setIsAuthVerified(true);
+        toast({
+          title: "Connection successful",
+          description: "Successfully connected to JIRA"
+        });
+      } else {
+        setIsAuthVerified(false);
+        toast({
+          title: "Connection failed",
+          description: "Could not connect to JIRA with current credentials",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      setIsAuthVerified(false);
+      toast({
+        title: "Connection error",
+        description: error.message || "Failed to connect to JIRA",
+        variant: "destructive"
+      });
     } finally {
       setIsValidating(false);
     }
@@ -158,13 +190,25 @@ export function ApiKeyForm() {
               Enter a JQL query to filter which issues appear in the clone interface.
             </p>
           </div>
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isValidating}
-          >
-            {isValidating ? "Validating..." : "Save API Key Configuration"}
-          </Button>
+          <div className="flex flex-col space-y-2">
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isValidating}
+            >
+              {isValidating ? "Validating..." : "Save API Key Configuration"}
+            </Button>
+            
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isValidating}
+              onClick={handleTestConnection}
+            >
+              {isValidating ? "Testing..." : "Test Connection"}
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>

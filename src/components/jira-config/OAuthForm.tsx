@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { db_ops } from '@/services/database';
 import { Key, LogIn } from 'lucide-react';
+import { jiraClient } from '@/services/jira-api/jira-client';
 
 export interface JiraOAuthFormData {
   jira_url: string;
@@ -22,6 +23,7 @@ export function OAuthForm() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [isAuthVerified, setIsAuthVerified] = useState(false);
   
   const form = useForm<JiraOAuthFormData>({
     defaultValues: {
@@ -148,6 +150,37 @@ export function OAuthForm() {
     }, 2000);
   };
 
+  const handleTestConnection = async () => {
+    setIsValidating(true);
+    try {
+      const isValid = await jiraClient.validateCredentials();
+      
+      if (isValid) {
+        setIsAuthVerified(true);
+        toast({
+          title: "Connection successful",
+          description: "Successfully connected to JIRA"
+        });
+      } else {
+        setIsAuthVerified(false);
+        toast({
+          title: "Connection failed",
+          description: "Could not connect to JIRA with current credentials",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      setIsAuthVerified(false);
+      toast({
+        title: "Connection error",
+        description: error.message || "Failed to connect to JIRA",
+        variant: "destructive"
+      });
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -233,6 +266,16 @@ export function OAuthForm() {
               variant={isAuthenticated ? "default" : "outline"}
             >
               {isValidating ? "Validating..." : "Save OAuth Configuration"}
+            </Button>
+            
+            <Button 
+              type="button"
+              variant="outline"
+              className="w-full"
+              disabled={isValidating}
+              onClick={handleTestConnection}
+            >
+              {isValidating ? "Testing..." : "Test Connection"}
             </Button>
           </div>
         </form>
