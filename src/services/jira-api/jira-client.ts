@@ -227,9 +227,9 @@ class JiraClient {
 
   async validateCredentials(): Promise<boolean> {
     try {
-      // Make a simple request to test the credentials
-      // We'll use the /myself endpoint which is lightweight and available in all Jira instances
-      const response = await this.request('myself');
+      // Make a real API call to JIRA's /myself endpoint which is lightweight
+      // and available in all JIRA instances
+      await this.request('myself');
       return true;
     } catch (error) {
       console.error('Validation error:', error);
