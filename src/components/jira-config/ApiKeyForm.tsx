@@ -85,6 +85,8 @@ export function ApiKeyForm() {
   const handleTestConnection = async () => {
     setIsValidating(true);
     setAuthError(null);
+    setIsAuthVerified(false); // Reset verification state when testing
+    
     const formData = form.getValues();
     
     if (!formData.jira_url || !formData.api_key || !formData.user_email) {
@@ -94,6 +96,10 @@ export function ApiKeyForm() {
     }
     
     try {
+      // Remove trailing slashes from the URL
+      formData.jira_url = formData.jira_url.trim().replace(/\/+$/, '');
+      
+      // Update the client configuration
       jiraClient.setConfig({
         baseUrl: formData.jira_url,
         auth: {

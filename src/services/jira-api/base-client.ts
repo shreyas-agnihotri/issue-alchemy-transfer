@@ -26,7 +26,7 @@ export class BaseJiraClient {
     }
 
     const credentials = `${this.config.auth.email}:${this.config.auth.apiKey}`;
-    const base64Auth = btoa(unescape(encodeURIComponent(credentials)));
+    const base64Auth = btoa(credentials);
     
     const headers = {
       'Authorization': `Basic ${base64Auth}`,
@@ -95,6 +95,7 @@ export class BaseJiraClient {
         stack: error.stack,
         status: error.status
       });
+      console.groupEnd();
       throw error;
     }
   }
@@ -136,6 +137,7 @@ export class BaseJiraClient {
         stack: error.stack,
         status: error.status || 0
       });
+      console.groupEnd();
 
       if (!error.status) {
         error = {
@@ -174,4 +176,3 @@ export class BaseJiraClient {
     throw error;
   }
 }
-
