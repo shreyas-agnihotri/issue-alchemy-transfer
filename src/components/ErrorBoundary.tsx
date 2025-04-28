@@ -2,7 +2,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, info } from 'lucide-react';
+import { RefreshCw, Info } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 interface Props {
@@ -56,7 +56,7 @@ class ErrorBoundary extends Component<Props, State> {
               
               <Collapsible className="mt-4">
                 <CollapsibleTrigger className="flex items-center text-sm text-destructive-foreground/70 hover:text-destructive-foreground">
-                  <info className="h-4 w-4 mr-2" />
+                  <Info className="h-4 w-4 mr-2" />
                   Show Details
                 </CollapsibleTrigger>
                 <CollapsibleContent className="pt-2">
@@ -79,8 +79,17 @@ class ErrorBoundary extends Component<Props, State> {
                       <div>
                         <strong>Console Logs:</strong>
                         <pre className="mt-2 p-2 bg-destructive/10 rounded overflow-auto max-h-[200px] whitespace-pre-wrap">
-                          {/* This will capture the last 50 console logs */}
-                          {console.logs?.slice(-50).join('\n')}
+                          {/* This will capture console logs if they are available */}
+                          {(() => {
+                            try {
+                              // Check if console.log history is available
+                              return window._consoleLog && Array.isArray(window._consoleLog) 
+                                ? window._consoleLog.slice(-50).join('\n')
+                                : 'Console logs not available';
+                            } catch (e) {
+                              return 'Error accessing console logs';
+                            }
+                          })()}
                         </pre>
                       </div>
                     )}
