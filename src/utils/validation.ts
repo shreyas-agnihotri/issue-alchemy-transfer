@@ -1,15 +1,42 @@
+
 import { z } from "zod";
 import { JiraIssue } from "@/types/jira";
 
 // JQL validation schema
 export const jqlSchema = z.string().min(1).refine((val) => {
-  // Basic JQL syntax validation
-  const hasValidSyntax = /^[^=]*=[^=]*$|^[^~]*~[^~]*$/.test(val);
-  return hasValidSyntax;
+  // Handle simple issue key format (PROJECT-123)
+  if (/^[A-Z]+-\d+$/.test(val.trim())) {
+    return true;
+  }
+  
+  // Handle key = PROJECT-123 format
+  if (/^key\s*=\s*[A-Z]+-\d+$/i.test(val.trim())) {
+    return true;
+  }
+  
+  // Basic JQL syntax validation for more complex queries
+  // This is a simplified check - Jira's JQL syntax is much more complex
+  const hasOperators = /=|!=|~|!~|>|<|>=|<=|in|not in|is|is not/i.test(val);
+  const hasWellFormedClauses = !(
+    val.includes("=") && !(/\w+\s*=/.test(val)) ||
+    val.includes("~") && !(/\w+\s*~/.test(val))
+  );
+  
+  return hasOperators && hasWellFormedClauses;
 }, "Invalid JQL syntax");
 
 // Validate JQL function
 export const validateJql = (jql: string) => {
+  // Special case for empty strings - don't validate
+  if (!jql.trim()) {
+    return { isValid: true, message: "" };
+  }
+  
+  // Special case for simple issue key
+  if (/^[A-Z]+-\d+$/.test(jql.trim())) {
+    return { isValid: true, message: "" };
+  }
+  
   const result = jqlSchema.safeParse(jql);
   return {
     isValid: result.success,
@@ -22,7 +49,8 @@ export const validateJiraUrl = (url: string) => {
   if (url === "") return { isValid: true, message: "" };
   
   // Generic URL validation for Jira instances - matches company hosted and cloud instances
-  const isValid = /^https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\/(?:browse|issues)\/[A-Z]+-\d+$/.test(url);
+  // Updated pattern to match a wider variety of Jira URL formats
+  const isValid = /^https?:\/\/[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*(?:\/[a-zA-Z0-9-_]*)?\/(?:browse|issues)\/[A-Z]+-\d+(?:[?#].*)?$/.test(url);
   
   return {
     isValid,

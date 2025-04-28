@@ -20,17 +20,7 @@ export const useCloneSearch = ({
   const { toast } = useToast();
 
   const handleSearch = async () => {
-    const jqlValidation = validateJql(jql);
-    
-    if (!jqlValidation.isValid) {
-      toast({
-        title: "Invalid JQL",
-        description: jqlValidation.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // Skip validation for empty JQL to handle URL pasting
     if (!jql.trim()) {
       toast({
         title: "Search criteria required",
@@ -56,21 +46,25 @@ export const useCloneSearch = ({
           description: "Try modifying your search criteria",
           variant: "destructive",
         });
-      } else if (response.issues.length === 1 && jql.startsWith('key =')) {
+      } else if (response.issues.length === 1 && (jql.includes('key =') || /^[A-Z]+-\d+$/.test(jql.trim()))) {
+        // Auto-select the issue if it's a single issue search by key
         setSelectedIssueIds([response.issues[0].id]);
       }
     } catch (error: any) {
       console.error("Search error:", error);
       
       let errorMessage = error.message || "An unknown error occurred";
+      let errorDetails = "";
       
       // Parse error message from different error formats
       if (error.error && typeof error.error === 'object') {
-        errorMessage = error.error.message || errorMessage;
+        errorMessage = error.error.errorMessages?.[0] || error.error.message || errorMessage;
+        errorDetails = error.error.errorMessages?.join(", ") || "";
       } else if (typeof error.error === 'string') {
         try {
           const parsedError = JSON.parse(error.error);
-          errorMessage = parsedError.message || errorMessage;
+          errorMessage = parsedError.errorMessages?.[0] || parsedError.message || errorMessage;
+          errorDetails = parsedError.errorMessages?.join(", ") || "";
         } catch {
           // If parsing fails, use the error as is
           errorMessage = error.error || errorMessage;
@@ -80,14 +74,14 @@ export const useCloneSearch = ({
       // Handle specific error cases
       if (error.status === 400) {
         toast({
-          title: "Bad Request",
-          description: "Invalid search query. Please check your JQL syntax.",
+          title: "Invalid Search Query",
+          description: errorMessage || "The JQL syntax appears to be invalid. Please check your query.",
           variant: "destructive",
         });
       } else if (error.message?.includes('CORS') || error.status === 0) {
         toast({
-          title: "CORS Error",
-          description: "Access blocked by CORS policy. Try using the desktop app instead of the browser, or configure your JIRA to allow cross-origin requests.",
+          title: "Connection Error",
+          description: "Unable to connect to the Jira API. Please check your Jira configuration.",
           variant: "destructive",
         });
       } else {

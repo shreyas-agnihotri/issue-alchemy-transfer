@@ -94,10 +94,13 @@ class JiraClient {
   }
 
   async searchIssues(jql: string): Promise<JiraSearchResponse> {
+    const sanitizedJql = this.sanitizeJql(jql);
+    console.log('Searching with sanitized JQL:', sanitizedJql);
+    
     return this.request<JiraSearchResponse>('search', {
       method: 'POST',
       body: JSON.stringify({
-        jql,
+        jql: sanitizedJql,
         maxResults: 50,
         fields: [
           'summary',
@@ -115,6 +118,27 @@ class JiraClient {
         ]
       })
     });
+  }
+
+  // Helper method to sanitize and normalize JQL
+  private sanitizeJql(jql: string): string {
+    // Remove any leading/trailing whitespace
+    let sanitized = jql.trim();
+    
+    // If the JQL is just a simple issue key query (like "AV-98472"), format it properly
+    if (/^[A-Z]+-\d+$/.test(sanitized)) {
+      return `key = ${sanitized}`;
+    }
+    
+    // If it's just a key = something without quotes, add quotes
+    if (/^key\s*=\s*[A-Z]+-\d+$/.test(sanitized)) {
+      const match = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/);
+      if (match && match[1]) {
+        return `key = "${match[1]}"`;
+      }
+    }
+    
+    return sanitized;
   }
 
   async cloneIssue(issueKey: string, targetProjectKey: string): Promise<any> {

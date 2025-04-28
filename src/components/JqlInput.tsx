@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { validateJiraUrl, validateJql } from '@/utils/validation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface JqlInputProps {
   jql: string;
@@ -32,10 +34,18 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
     const url = e.target.value;
     setIssueUrl(url);
     
+    // Clear previous errors
+    setUrlError(undefined);
+    
+    if (!url.trim()) {
+      return;
+    }
+    
     const urlValidation = validateJiraUrl(url);
     setUrlError(urlValidation.isValid ? undefined : urlValidation.message);
     
     if (urlValidation.isValid && url) {
+      // Extract issue key from URL - support multiple URL formats
       const issueKeyMatch = url.match(/\/(?:browse|issues)\/([A-Z]+-\d+)/);
       if (issueKeyMatch) {
         const issueKey = issueKeyMatch[1];
@@ -47,26 +57,29 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
 
   const handleJqlChange = (value: string) => {
     onJqlChange(value);
+    
+    // Don't show errors for empty JQL
+    if (!value.trim()) {
+      setJqlError(undefined);
+      return;
+    }
+    
+    // Basic validation for simple issue key format
+    if (/^[A-Z]+-\d+$/.test(value.trim())) {
+      setJqlError(undefined);
+      return;
+    }
+    
     const jqlValidation = validateJql(value);
     setJqlError(jqlValidation.isValid ? undefined : jqlValidation.message);
   };
 
-  const handleSearch = () => {
-    const urlValidation = validateJiraUrl(issueUrl);
-    const jqlValidation = validateJql(jql);
-
-    if (!urlValidation.isValid) {
-      setUrlError(urlValidation.message);
-      return;
-    }
-
-    if (!jqlValidation.isValid) {
-      setJqlError(jqlValidation.message);
-      return;
-    }
-
-    if (jql.trim() || issueUrl.trim()) {
-      onSearch();
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isLoading && (jql.trim() || issueUrl.trim()) && !urlError && !jqlError) {
+        onSearch();
+      }
     }
   };
 
@@ -75,6 +88,22 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Search Issues</CardTitle>
         <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Info className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">
+                  You can search by pasting a Jira URL, entering an issue key directly, 
+                  or using JQL (Jira Query Language).
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
@@ -131,6 +160,7 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
               placeholder="Paste Jira issue URL here..."
               value={issueUrl}
               onChange={handleUrlPaste}
+              onKeyDown={handleKeyDown}
               className={cn("font-mono text-sm", urlError && "border-red-500")}
             />
             {urlError && (
@@ -148,6 +178,7 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
               placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC'
               value={jql}
               onChange={(e) => handleJqlChange(e.target.value)}
+              onKeyDown={handleKeyDown}
               className={cn("font-mono text-sm", jqlError && "border-red-500")}
               rows={3}
             />
@@ -159,7 +190,7 @@ const JqlInput: React.FC<JqlInputProps> = ({ jql, onJqlChange, onSearch, isLoadi
           </div>
           <div className="flex justify-end">
             <Button
-              onClick={handleSearch}
+              onClick={onSearch}
               disabled={isLoading || (!jql.trim() && !issueUrl.trim()) || !!urlError || !!jqlError}
               className="bg-jira-blue hover:bg-jira-blue-dark"
             >

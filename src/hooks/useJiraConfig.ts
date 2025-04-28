@@ -1,9 +1,11 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { db_ops } from '@/services/database';
 import { jiraClient } from '@/services/jira-api/jira-client';
 
 export const useJiraConfig = () => {
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
+
   useEffect(() => {
     const loadJiraConfig = async () => {
       try {
@@ -28,11 +30,16 @@ export const useJiraConfig = () => {
           
           console.log('Loaded Jira configuration from database');
         }
+        
+        setIsConfigLoaded(true);
       } catch (error) {
         console.error('Error loading Jira configuration:', error);
+        setIsConfigLoaded(true); // Still mark as loaded even if there was an error
       }
     };
 
     loadJiraConfig();
   }, []);
+  
+  return { isConfigLoaded };
 };

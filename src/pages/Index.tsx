@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { History as HistoryIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -12,9 +13,10 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { useCloneIssues } from '@/hooks/useCloneIssues';
 import { mockProjects } from '@/lib/mock-data';
 import { useJiraConfig } from '@/hooks/useJiraConfig';
+import { db_ops } from '@/services/database';
 
 const Index = () => {
-  useJiraConfig();
+  const { isConfigLoaded } = useJiraConfig();
 
   const {
     targetProjectId,
@@ -36,6 +38,24 @@ const Index = () => {
     handleConfirmClone,
     handleSearch
   } = useCloneIssues();
+
+  // Load default JQL filter from configuration if available
+  useEffect(() => {
+    const loadDefaultJql = async () => {
+      try {
+        const config = await db_ops.getJiraConfig();
+        if (config && config.jql_filter && !jql) {
+          setJql(config.jql_filter);
+        }
+      } catch (error) {
+        console.error('Error loading default JQL filter:', error);
+      }
+    };
+
+    if (isConfigLoaded) {
+      loadDefaultJql();
+    }
+  }, [isConfigLoaded, jql, setJql]);
 
   return (
     <ErrorBoundary>
