@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Settings, Key, LogIn } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
@@ -12,6 +11,7 @@ import { db_ops } from '@/services/database';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 
 interface JiraApiKeyFormData {
   jira_url: string;
@@ -165,66 +165,47 @@ const JiraConfig = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {/* Explicit Form context for API key form */}
-                <Form {...apiKeyForm}>
-                  <form onSubmit={apiKeyForm.handleSubmit(onApiKeySubmit)} className="space-y-4">
-                    <FormField
-                      control={apiKeyForm.control}
-                      name="jira_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>JIRA URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://your-domain.atlassian.net" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                {/* Use regular form instead of Form component to avoid context issues */}
+                <form onSubmit={apiKeyForm.handleSubmit(onApiKeySubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="jira_url">JIRA URL</Label>
+                    <Input 
+                      id="jira_url"
+                      placeholder="https://your-domain.atlassian.net" 
+                      {...apiKeyForm.register('jira_url')} 
                     />
-                    <FormField
-                      control={apiKeyForm.control}
-                      name="api_key"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>API Key</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Your JIRA API Key" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="api_key">API Key</Label>
+                    <Input 
+                      id="api_key"
+                      type="password" 
+                      placeholder="Your JIRA API Key" 
+                      {...apiKeyForm.register('api_key')} 
                     />
-                    <FormField
-                      control={apiKeyForm.control}
-                      name="user_email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>User Email</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder="your-email@example.com" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="user_email">User Email</Label>
+                    <Input 
+                      id="user_email"
+                      type="email" 
+                      placeholder="your-email@example.com" 
+                      {...apiKeyForm.register('user_email')} 
                     />
-                    <FormField
-                      control={apiKeyForm.control}
-                      name="jql_filter"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default JQL Filter</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC' 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter a JQL query to filter which issues appear in the clone interface.
-                          </FormDescription>
-                        </FormItem>
-                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="jql_filter">Default JQL Filter</Label>
+                    <Textarea 
+                      id="jql_filter"
+                      placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC' 
+                      {...apiKeyForm.register('jql_filter')} 
                     />
-                    <Button type="submit" className="w-full">Save API Key Configuration</Button>
-                  </form>
-                </Form>
+                    <p className="text-sm text-muted-foreground">
+                      Enter a JQL query to filter which issues appear in the clone interface.
+                    </p>
+                  </div>
+                  <Button type="submit" className="w-full">Save API Key Configuration</Button>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
@@ -246,104 +227,84 @@ const JiraConfig = () => {
                   </AlertDescription>
                 </Alert>
                 
-                {/* Explicit Form context for OAuth form */}
-                <Form {...oauthForm}>
-                  <form onSubmit={oauthForm.handleSubmit(onOAuthSubmit)} className="space-y-4">
-                    <FormField
-                      control={oauthForm.control}
-                      name="jira_url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>JIRA URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://your-domain.atlassian.net" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                {/* Use regular form instead of Form component to avoid context issues */}
+                <form onSubmit={oauthForm.handleSubmit(onOAuthSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="oauth_jira_url">JIRA URL</Label>
+                    <Input 
+                      id="oauth_jira_url"
+                      placeholder="https://your-domain.atlassian.net" 
+                      {...oauthForm.register('jira_url')} 
                     />
-                    <FormField
-                      control={oauthForm.control}
-                      name="oauth_client_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>OAuth Client ID</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Your OAuth Client ID" {...field} />
-                          </FormControl>
-                          <FormDescription>
-                            Create an OAuth app in your Atlassian developer console.
-                          </FormDescription>
-                        </FormItem>
-                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="oauth_client_id">OAuth Client ID</Label>
+                    <Input 
+                      id="oauth_client_id"
+                      placeholder="Your OAuth Client ID" 
+                      {...oauthForm.register('oauth_client_id')} 
                     />
-                    <FormField
-                      control={oauthForm.control}
-                      name="oauth_client_secret"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>OAuth Client Secret</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Your OAuth Client Secret" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
+                    <p className="text-sm text-muted-foreground">
+                      Create an OAuth app in your Atlassian developer console.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="oauth_client_secret">OAuth Client Secret</Label>
+                    <Input 
+                      id="oauth_client_secret"
+                      type="password" 
+                      placeholder="Your OAuth Client Secret" 
+                      {...oauthForm.register('oauth_client_secret')} 
                     />
-                    <FormField
-                      control={oauthForm.control}
-                      name="jql_filter"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Default JQL Filter</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC' 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Enter a JQL query to filter which issues appear in the clone interface.
-                          </FormDescription>
-                        </FormItem>
-                      )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="oauth_jql_filter">Default JQL Filter</Label>
+                    <Textarea 
+                      id="oauth_jql_filter"
+                      placeholder='project = "DEMO" AND status != Closed ORDER BY created DESC' 
+                      {...oauthForm.register('jql_filter')} 
                     />
+                    <p className="text-sm text-muted-foreground">
+                      Enter a JQL query to filter which issues appear in the clone interface.
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Button 
+                      type="button" 
+                      className="w-full"
+                      variant={isAuthenticated ? "outline" : "default"}
+                      disabled={isAuthenticating}
+                      onClick={initiateOAuthFlow}
+                    >
+                      {isAuthenticating ? (
+                        "Authenticating..."
+                      ) : isAuthenticated ? (
+                        "Reauthenticate with JIRA"
+                      ) : (
+                        <>
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Authenticate with JIRA
+                        </>
+                      )}
+                    </Button>
                     
-                    <div className="flex flex-col space-y-2">
-                      <Button 
-                        type="button" 
-                        className="w-full"
-                        variant={isAuthenticated ? "outline" : "default"}
-                        disabled={isAuthenticating}
-                        onClick={initiateOAuthFlow}
-                      >
-                        {isAuthenticating ? (
-                          "Authenticating..."
-                        ) : isAuthenticated ? (
-                          "Reauthenticate with JIRA"
-                        ) : (
-                          <>
-                            <LogIn className="mr-2 h-4 w-4" />
-                            Authenticate with JIRA
-                          </>
-                        )}
-                      </Button>
-                      
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={!isAuthenticated}
-                        variant={isAuthenticated ? "default" : "outline"}
-                      >
-                        Save OAuth Configuration
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={!isAuthenticated}
+                      variant={isAuthenticated ? "default" : "outline"}
+                    >
+                      Save OAuth Configuration
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
               <CardFooter className="flex flex-col items-start">
-                <FormDescription>
+                <p className="text-sm text-muted-foreground">
                   Setting up OAuth requires creating an OAuth app in the Atlassian developer console
                   and configuring the redirect URI to point to your application.
-                </FormDescription>
+                </p>
               </CardFooter>
             </Card>
           </TabsContent>
