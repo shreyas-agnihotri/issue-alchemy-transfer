@@ -14,7 +14,13 @@ class JiraClient {
       throw new Error('Jira configuration not set');
     }
 
-    const base64Auth = btoa(`${this.config.auth.email}:${this.config.auth.apiKey}`);
+    if (!this.config.auth.email || !this.config.auth.apiKey) {
+      throw new Error('Email and API key are required for authentication');
+    }
+
+    const credentials = `${this.config.auth.email}:${this.config.auth.apiKey}`;
+    const base64Auth = btoa(credentials);
+    
     return {
       'Authorization': `Basic ${base64Auth}`,
       'Content-Type': 'application/json',
