@@ -6,11 +6,13 @@ import { RefreshCw } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
+  fallback?: ReactNode;
 }
 
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 class ErrorBoundary extends Component<Props, State> {
@@ -27,20 +29,37 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Uncaught error:', error, errorInfo);
+    this.setState({ errorInfo });
   }
 
   private handleReset = () => {
-    this.setState({ hasError: false, error: undefined });
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    
+    // Force a page reload to get a clean state
+    window.location.href = window.location.origin + window.location.pathname + '#/';
   };
 
   public render() {
     if (this.state.hasError) {
+      // Render fallback UI if provided
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      
       return (
         <div className="p-4">
           <Alert variant="destructive">
             <AlertTitle>Something went wrong</AlertTitle>
-            <AlertDescription>
+            <AlertDescription className="whitespace-pre-wrap">
               {this.state.error?.message || 'An unexpected error occurred'}
+              {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+                <details className="mt-2 text-xs">
+                  <summary>Stack trace</summary>
+                  <pre className="mt-2 max-h-96 overflow-auto text-xs">
+                    {this.state.errorInfo.componentStack}
+                  </pre>
+                </details>
+              )}
             </AlertDescription>
           </Alert>
           <div className="mt-4 flex justify-center">
@@ -62,4 +81,3 @@ class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-
