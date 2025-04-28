@@ -179,18 +179,24 @@ app.on('activate', () => {
 // IPC handler for making HTTP requests
 ipcMain.handle('make-request', async (event, { url, options }) => {
   console.log('Main process: Making request to:', url);
-  console.log('Request options:', JSON.stringify(options, null, 2));
   
   try {
-    // Process headers to ensure they're in the right format
+    // Process options to ensure proper format for node-fetch
     const fetchOptions = { ...options };
     
-    // Ensure method is set
-    if (!fetchOptions.method) {
-      fetchOptions.method = 'GET';
-    }
+    // Make sure headers are properly formatted
+    const headers = options.headers || {};
+    fetchOptions.headers = headers;
     
-    console.log('Making request with fetch options:', JSON.stringify(fetchOptions, null, 2));
+    // Ensure method is set
+    fetchOptions.method = fetchOptions.method || 'GET';
+    
+    // Log the exact request being made
+    console.log('Request options:', {
+      method: fetchOptions.method,
+      headers: { ...fetchOptions.headers, Authorization: '***REDACTED***' },
+      body: fetchOptions.body ? fetchOptions.body : undefined
+    });
     
     // Use node-fetch to make the request
     const response = await fetch(url, fetchOptions);
@@ -207,13 +213,19 @@ ipcMain.handle('make-request', async (event, { url, options }) => {
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       data = await response.json();
+      console.log('Response data (JSON):', JSON.stringify(data).substring(0, 200) + '...');
     } else {
       data = await response.text();
+      console.log('Response data (text):', data.substring(0, 200) + '...');
+    }
+    
+    if (!ok) {
+      console.error(`Error ${status}: ${statusText}`, data);
     }
     
     return { ok, status, statusText, data };
   } catch (error) {
-    console.error('Error making request:', error);
+    console.error('Error making request:', error.message);
     return { 
       ok: false, 
       status: 0, 

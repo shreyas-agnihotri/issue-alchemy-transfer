@@ -43,16 +43,31 @@ class JiraClient {
         console.log('Using Electron IPC for request:', url);
         const headers = this.getHeaders();
         
+        // Clone options to avoid mutating the original object
+        const requestOptions = { ...options };
+        
+        // Ensure the body is stringified if it's an object
+        if (requestOptions.body && typeof requestOptions.body === 'object') {
+          requestOptions.body = JSON.stringify(requestOptions.body);
+        }
+        
+        // Debug the exact request being sent
+        console.debug('Request headers:', headers);
+        console.debug('Request body:', requestOptions.body);
+        
         const response = await window.electron.makeRequest({
           url,
           options: {
-            ...options,
+            ...requestOptions,
             headers
           }
         });
         
+        console.debug('Response received:', response);
+        
         if (!response.ok) {
           console.error('Electron request failed:', response.status, response.statusText);
+          console.error('Response data:', response.data);
           const error: JiraError = {
             status: response.status,
             message: response.statusText || 'Request failed',
@@ -99,7 +114,7 @@ class JiraClient {
     
     return this.request<JiraSearchResponse>('search', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         jql: sanitizedJql,
         maxResults: 50,
         fields: [
@@ -116,7 +131,7 @@ class JiraClient {
           'updated',
           'project'
         ]
-      })
+      }
     });
   }
 
@@ -127,15 +142,13 @@ class JiraClient {
     
     // If the JQL is just a simple issue key query (like "AV-98472"), format it properly
     if (/^[A-Z]+-\d+$/.test(sanitized)) {
-      return `key = ${sanitized}`;
+      return `key = "${sanitized}"`;
     }
     
     // If it's just a key = something without quotes, add quotes
-    if (/^key\s*=\s*[A-Z]+-\d+$/.test(sanitized)) {
-      const match = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/);
-      if (match && match[1]) {
-        return `key = "${match[1]}"`;
-      }
+    const keyMatch = sanitized.match(/^key\s*=\s*([A-Z]+-\d+)$/);
+    if (keyMatch && keyMatch[1]) {
+      return `key = "${keyMatch[1]}"`;
     }
     
     return sanitized;
@@ -161,7 +174,7 @@ class JiraClient {
     // Create the new issue
     return this.request('issue', {
       method: 'POST',
-      body: JSON.stringify(newIssue)
+      body: newIssue
     });
   }
 }

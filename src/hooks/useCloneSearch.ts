@@ -38,9 +38,9 @@ export const useCloneSearch = ({
       const response = await jiraClient.searchIssues(jql);
       console.log('Search response:', response);
       
-      setIssues(response.issues);
+      setIssues(response.issues || []);
       
-      if (response.issues.length === 0) {
+      if (!response.issues || response.issues.length === 0) {
         toast({
           title: "No results found",
           description: "Try modifying your search criteria",
@@ -56,18 +56,24 @@ export const useCloneSearch = ({
       let errorMessage = error.message || "An unknown error occurred";
       let errorDetails = "";
       
-      // Parse error message from different error formats
-      if (error.error && typeof error.error === 'object') {
-        errorMessage = error.error.errorMessages?.[0] || error.error.message || errorMessage;
-        errorDetails = error.error.errorMessages?.join(", ") || "";
-      } else if (typeof error.error === 'string') {
-        try {
-          const parsedError = JSON.parse(error.error);
-          errorMessage = parsedError.errorMessages?.[0] || parsedError.message || errorMessage;
-          errorDetails = parsedError.errorMessages?.join(", ") || "";
-        } catch {
-          // If parsing fails, use the error as is
-          errorMessage = error.error || errorMessage;
+      // Extract error message from different error formats
+      if (error.error) {
+        if (typeof error.error === 'object') {
+          errorMessage = error.error.errorMessages?.[0] || 
+                        error.error.message || 
+                        error.error.error || errorMessage;
+          errorDetails = error.error.errorMessages?.join(", ") || "";
+        } else if (typeof error.error === 'string') {
+          try {
+            const parsedError = JSON.parse(error.error);
+            errorMessage = parsedError.errorMessages?.[0] || 
+                          parsedError.message || 
+                          parsedError.error || errorMessage;
+            errorDetails = parsedError.errorMessages?.join(", ") || "";
+          } catch {
+            // If parsing fails, use the error as is
+            errorMessage = error.error;
+          }
         }
       }
       
@@ -78,6 +84,12 @@ export const useCloneSearch = ({
           description: errorMessage || "The JQL syntax appears to be invalid. Please check your query.",
           variant: "destructive",
         });
+      } else if (error.status === 401) {
+        toast({
+          title: "Authentication Error",
+          description: "Your Jira credentials are invalid or expired. Please check your configuration.",
+          variant: "destructive",
+        });
       } else if (error.message?.includes('CORS') || error.status === 0) {
         toast({
           title: "Connection Error",
@@ -86,7 +98,7 @@ export const useCloneSearch = ({
         });
       } else {
         toast({
-          title: "Search failed",
+          title: `Search failed (${error.status || 'Error'})`,
           description: errorMessage,
           variant: "destructive",
         });
