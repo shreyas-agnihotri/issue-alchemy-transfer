@@ -29,20 +29,46 @@ export const useCloneOperations = ({
     ? getProjectById(selectedIssues[0].project)
     : undefined;
 
-  const handleCloneClick = () => {
+  const validateCloneOperation = () => {
+    const errors: string[] = [];
+
     if (selectedIssues.length === 0) {
-      toast({
-        title: "No issues selected",
-        description: "Please select at least one issue to clone",
-        variant: "destructive",
-      });
-      return;
+      errors.push("No issues selected");
     }
-    
+
     if (!targetProject) {
+      errors.push("Target project is required");
+    }
+
+    // Check if all selected issues are from the same project
+    const projectIds = new Set(selectedIssues.map(issue => issue.project));
+    if (projectIds.size > 1) {
+      errors.push("All selected issues must be from the same project");
+    }
+
+    // Check if target project is different from source project
+    if (sourceProject && targetProject && sourceProject.id === targetProject.id) {
+      errors.push("Source and target projects must be different");
+    }
+
+    // Check for potential epic/subtask relationships
+    const epicIssues = selectedIssues.filter(issue => issue.type === 'Epic');
+    const subtaskIssues = selectedIssues.filter(issue => issue.type === 'Subtask');
+    
+    if (epicIssues.length > 0 && subtaskIssues.length > 0) {
+      errors.push("Cannot clone epics and subtasks in the same operation");
+    }
+
+    return errors;
+  };
+
+  const handleCloneClick = () => {
+    const validationErrors = validateCloneOperation();
+    
+    if (validationErrors.length > 0) {
       toast({
-        title: "Target project required",
-        description: "Please select a target project for the cloned issues",
+        title: "Validation Error",
+        description: validationErrors.join("\n"),
         variant: "destructive",
       });
       return;
